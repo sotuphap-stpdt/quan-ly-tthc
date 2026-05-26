@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Báo cáo thống kê TTHC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <style>
+        body { background: #f0f2f5; }
+        .filter-card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-box { text-align: center; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        .stat-box-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .stat-box-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+        .stat-box-warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .stat-box-info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .table-responsive { overflow-x: auto; }
+        .table th { white-space: nowrap; background-color: #343a40; color: white; vertical-align: middle; }
+        .table td { vertical-align: middle; word-wrap: break-word; }
+        .ten-tthc-content { word-break: break-word; white-space: normal; line-height: 1.4; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-plus-circle"></i> Thêm mới</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
+                        <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
+                <li class="nav-item"><a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a></li>
+                <li class="nav-item"><a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a></li>
+                <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
+                <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white"><h3><i class="fas fa-chart-pie"></i> BÁO CÁO THỐNG KÊ THỦ TỤC HÀNH CHÍNH</h3></div>
+        <div class="card-body">
+            <div class="filter-card">
+                <h5><i class="fas fa-filter"></i> BỘ LỌC BÁO CÁO</h5>
+                <div class="row g-3">
+                    <div class="col-md-3"><label><i class="fas fa-gavel"></i> Số quyết định</label><select id="filterQuyetDinh" class="form-select"><option value="">-- Tất cả --</option>{% for qd in danh_sach_quyet_dinh %}<option value="{{ qd[1] }}">{{ qd[1] }}</option>{% endfor %}</select></div>
+                    <div class="col-md-3"><label><i class="fas fa-tags"></i> Lĩnh vực</label><select id="filterLinhVuc" class="form-select"><option value="">-- Tất cả --</option>{% for lv in danh_sach_linh_vuc %}<option value="{{ lv[0] }}">{{ lv[0] }}</option>{% endfor %}</select></div>
+                    <div class="col-md-3"><label><i class="fas fa-layer-group"></i> Cấp thực hiện</label><select id="filterCap" class="form-select"><option value="">-- Tất cả --</option><option value="bo">Cấp Bộ</option><option value="tinh">Cấp tỉnh</option><option value="xa">Cấp xã</option><option value="dung_chung">Dùng chung</option><option value="lien_thong">Liên thông</option></select></div>
+                    <div class="col-md-3"><label><i class="fas fa-globe"></i> Loại dịch vụ công</label><select id="filterTrangThai" class="form-select"><option value="">-- Tất cả --</option><option value="toan_trinh">Toàn trình</option><option value="mot_phan">Một phần</option><option value="cung_cap_tt">Cung cấp thông tin</option></select></div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3"><label><i class="fas fa-money-bill-wave"></i> Phí / Lệ phí / Miễn thu</label><select id="filterPhiLePhi" class="form-select"><option value="">-- Tất cả --</option><option value="co_phi">Có phí</option><option value="co_le_phi">Có lệ phí</option><option value="mien_thu">Miễn thu (không phí, không lệ phí)</option></select><div class="form-text text-muted small">Lọc theo phí, lệ phí hoặc trường hợp miễn thu</div></div>
+                    <div class="col-md-3"><label><i class="fas fa-building"></i> Dịch vụ BCCI</label><select id="filterBCCI" class="form-select"><option value="">-- Tất cả --</option><option value="co">Có dịch vụ BCCI</option><option value="khong">Không có dịch vụ BCCI</option>{% for bcci in danh_sach_bcci %}{% if bcci[0] and bcci[0] != 'Có' and bcci[0] != 'Không' and bcci[0].strip() != '' %}<option value="{{ bcci[0] }}">{{ bcci[0] }}</option>{% endif %}{% endfor %}</select></div>
+                    <div class="col-md-3"><label><i class="fas fa-university"></i> Cơ quan thực hiện</label><select id="filterCoQuan" class="form-select"><option value="">-- Tất cả --</option>{% for cq in danh_sach_co_quan %}<option value="{{ cq[0] }}">{{ cq[0] }}</option>{% endfor %}</select></div>
+                    <div class="col-md-3 d-flex align-items-end"><div class="d-flex gap-2 w-100"><button id="btnLoc" class="btn btn-primary flex-grow-1"><i class="fas fa-search"></i> Lọc báo cáo</button><button id="btnReset" class="btn btn-secondary flex-grow-1"><i class="fas fa-undo"></i> Đặt lại</button><button id="btnExport" class="btn btn-success flex-grow-1"><i class="fas fa-file-excel"></i> Xuất Excel</button></div></div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-3"><div class="stat-box stat-box-primary"><h3 id="tongSoThuTuc">0</h3><p><i class="fas fa-database"></i> Tổng số TTHC</p></div></div>
+                <div class="col-md-3"><div class="stat-box stat-box-success"><h3 id="soToanTrinh">0</h3><p><i class="fas fa-check-circle"></i> Toàn trình</p></div></div>
+                <div class="col-md-3"><div class="stat-box stat-box-warning"><h3 id="soMotPhan">0</h3><p><i class="fas fa-adjust"></i> Một phần</p></div></div>
+                <div class="col-md-3"><div class="stat-box stat-box-info"><h3 id="soCungCapTT">0</h3><p><i class="fas fa-info-circle"></i> Cung cấp TT</p></div></div>
+            </div>
+            
+            <div class="table-responsive">
+                <table id="baoCaoTable" class="table table-bordered table-striped">
+                    <thead class="table-dark"><tr><th style="width:50px">STT</th><th style="width:120px">MÃ TTHC</th><th style="min-width:350px">TÊN THỦ TỤC HÀNH CHÍNH</th><th style="width:150px">LĨNH VỰC</th><th style="width:60px">PHÍ</th><th style="width:60px">LỆ PHÍ</th><th style="width:120px">CẤP THỰC HIỆN</th><th style="min-width:200px">CƠ QUAN THỰC HIỆN</th><th style="width:90px">TOÀN TRÌNH</th><th style="width:80px">MỘT PHẦN</th><th style="width:130px">CUNG CẤP TT</th><th style="width:120px">DỊCH VỤ BCCI</th><th style="width:130px">QUYẾT ĐỊNH SỐ</th><th style="width:150px">GHI CHÚ</th></tr></thead>
+                    <tbody id="tableBody"><tr><td colspan="14" class="text-center">Đang tải dữ liệu...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const capMap = {'bo':'Cấp Bộ','tinh':'Cấp tỉnh','xa':'Cấp xã','dung_chung':'Dùng chung','lien_thong':'Liên thông'};
+function loadData(){
+    const params=new URLSearchParams({so_quyet_dinh:document.getElementById('filterQuyetDinh').value,linh_vuc:document.getElementById('filterLinhVuc').value,cap_thuc_hien:document.getElementById('filterCap').value,trang_thai:document.getElementById('filterTrangThai').value,phi_le_phi:document.getElementById('filterPhiLePhi').value,dich_vu_bcci:document.getElementById('filterBCCI').value,co_quan_thuc_hien:document.getElementById('filterCoQuan').value});
+    $('#tableBody').html('<tr><td colspan="14" class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</td></tr>');
+    fetch(`/api/bao_cao_data?${params}`).then(r=>r.json()).then(data=>{
+        document.getElementById('tongSoThuTuc').innerText=data.tong_so;document.getElementById('soToanTrinh').innerText=data.so_toan_trinh;document.getElementById('soMotPhan').innerText=data.so_mot_phan;document.getElementById('soCungCapTT').innerText=data.so_cung_cap_tt;
+        let html='';data.data.forEach((item,idx)=>{html+=`<tr><td class="text-center">${idx+1}</td><td><strong>${escapeHtml(item.ma_tthc)}</strong></td><td class="ten-tthc-content">${escapeHtml(item.ten_tthc)}</td><td>${escapeHtml(item.linh_vuc)||'-'}</td><td class="text-center">${item.phi=='Có'?'<i class="fas fa-check-circle text-success"></i>':'<i class="fas fa-times-circle text-muted"></i>'}</td><td class="text-center">${item.le_phi=='Có'?'<i class="fas fa-check-circle text-success"></i>':'<i class="fas fa-times-circle text-muted"></i>'}</td><td>${capMap[item.cap_thuc_hien]||item.cap_thuc_hien||'-'}</td><td>${escapeHtml(item.co_quan_thuc_hien)||'-'}</td><td class="text-center">${item.toan_trinh=='X'?'<i class="fas fa-check-circle text-success"></i>':'<i class="fas fa-times-circle text-muted"></i>'}</td><td class="text-center">${item.mot_phan=='X'?'<i class="fas fa-check-circle text-success"></i>':'<i class="fas fa-times-circle text-muted"></i>'}</td><td class="text-center">${item.cung_cap_tt=='X'?'<i class="fas fa-check-circle text-success"></i>':'<i class="fas fa-times-circle text-muted"></i>'}</td><td>${escapeHtml(item.dich_vu_bcci)||'-'}</td><td>${escapeHtml(item.so_quyet_dinh)||'-'}</td><td>${escapeHtml(item.ghi_chu)||'-'}</td>`;});
+        $('#tableBody').html(html||'<tr><td colspan="14" class="text-center">Không có dữ liệu</td></tr>');
+    }).catch(e=>{$('#tableBody').html('<tr><td colspan="14" class="text-danger text-center">Lỗi tải dữ liệu</td></tr>');});
+}
+function escapeHtml(t){if(!t)return'';const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+document.getElementById('btnLoc').addEventListener('click',loadData);
+document.getElementById('btnReset').addEventListener('click',()=>{document.getElementById('filterQuyetDinh').value='';document.getElementById('filterLinhVuc').value='';document.getElementById('filterCap').value='';document.getElementById('filterTrangThai').value='';document.getElementById('filterPhiLePhi').value='';document.getElementById('filterBCCI').value='';document.getElementById('filterCoQuan').value='';loadData();});
+document.getElementById('btnExport').addEventListener('click',()=>{const p=new URLSearchParams({so_quyet_dinh:document.getElementById('filterQuyetDinh').value,linh_vuc:document.getElementById('filterLinhVuc').value,cap_thuc_hien:document.getElementById('filterCap').value,trang_thai:document.getElementById('filterTrangThai').value,phi_le_phi:document.getElementById('filterPhiLePhi').value,dich_vu_bcci:document.getElementById('filterBCCI').value,co_quan_thuc_hien:document.getElementById('filterCoQuan').value});window.location.href=`/export_bao_cao_excel?${p}`;});
+loadData();
+</script>
+</body>
+</html>

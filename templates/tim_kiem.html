@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tra cứu thủ tục hành chính</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <style>
+        .table-responsive { overflow-x: auto; }
+        .table th { white-space: nowrap; background-color: #343a40; color: white; }
+        .table td { vertical-align: middle; word-wrap: break-word; }
+        .ten-tthc-content { word-break: break-word; white-space: normal; line-height: 1.4; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-plus-circle"></i> Thêm mới</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
+                        <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
+                <li class="nav-item"><a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a></li>
+                <li class="nav-item"><a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a></li>
+                <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
+                <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2><i class="fas fa-search"></i> Tra cứu thủ tục hành chính</h2>
+    <form method="GET" class="mb-4"><div class="input-group"><input type="text" name="q" class="form-control" placeholder="Nhập mã TTHC hoặc tên thủ tục cần tìm..." value="{{ tu_khoa }}"><button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Tìm kiếm</button></div></form>
+    <div class="table-responsive"><table id="timKiemTable" class="table table-bordered table-striped"><thead class="table-dark"><tr><th style="width:50px">STT</th><th style="width:130px">MÃ TTHC</th><th style="min-width:350px">TÊN THỦ TỤC HÀNH CHÍNH</th><th style="width:120px">CẤP THỰC HIỆN</th><th style="width:150px">TRẠNG THÁI</th><th style="width:100px">THAO TÁC</th></tr></thead><tbody>{% for kq in ket_qua %}{% set cap_text = {'bo':'Cấp Bộ','tinh':'Cấp tỉnh','xa':'Cấp xã','dung_chung':'Dùng chung','lien_thong':'Liên thông'}.get(kq[3], kq[3]) %}{% set trangthai_text = {'toan_trinh':'Toàn trình','cong_khai_mot_phan':'Một phần','chua_cong_khai':'Chưa công khai'}.get(kq[4], kq[4]) %}<tr><td class="text-center">{{ loop.index }}</td><td><strong>{{ kq[1] }}</strong></td><td class="ten-tthc-content">{{ kq[2] }}</td><td>{{ cap_text }}</td><td>{{ trangthai_text }}</td><td class="text-center"><a href="/tthc/chi_tiet/{{ kq[0] }}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Chi tiết</a></td></tr>{% else %}<tr><td colspan="6" class="text-center">Không tìm thấy kết quả nào</td></tr>{% endfor %}</tbody></table></div>
+    <a href="/" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left"></i> Về Dashboard</a>
+</div>
+<script>$(document).ready(function(){$('#timKiemTable').DataTable({language:{url:"//cdn.datatables.net/plug-ins/1.13.4/i18n/vi.json"},pageLength:10,autoWidth:false});});</script>
+</body>
+</html>

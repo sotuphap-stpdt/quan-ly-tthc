@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>So sánh quyết định</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .qd-card { cursor: pointer; transition: all 0.3s; margin-bottom: 10px; }
+        .qd-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .qd-selected { background-color: #28a745; color: white; border-color: #28a745; }
+        .table-cong-bo { background-color: #d4edda; }
+        .table-sua_doi { background-color: #fff3cd; }
+        .table-thay_the { background-color: #cce5ff; }
+        .table-bai_bo { background-color: #f8d7da; }
+        .legend-box { display: inline-block; width: 20px; height: 20px; margin-right: 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-plus-circle"></i> Thêm mới</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
+                        <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
+                <li class="nav-item"><a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a></li>
+                <li class="nav-item"><a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a></li>
+                <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
+                <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>So sánh quyết định công bố</h2>
+    <div class="alert alert-info">Click chọn các quyết định (có thể chọn nhiều) → bấm So sánh</div>
+    <div class="row"><div class="col-md-4"><div class="card"><div class="card-header bg-primary text-white">Chọn quyết định</div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="qdList"></div><button id="btnSoSanh" class="btn btn-success w-100 mt-3">So sánh</button><button id="btnBoChon" class="btn btn-secondary w-100 mt-2">Bỏ chọn</button></div></div></div>
+    <div class="col-md-8"><div class="card"><div class="card-header bg-success text-white">Kết quả so sánh</div><div class="card-body" id="ketQua"><div class="alert alert-secondary">Chọn quyết định và bấm "So sánh"</div></div></div></div></div>
+</div>
+<script>
+let quyetDinhs=[],selectedIds=[];
+$.get('/api/quyet_dinh',function(data){quyetDinhs=data;renderList();});
+function renderList(){let html='';quyetDinhs.forEach(qd=>{let isSelected=selectedIds.includes(qd.id);let colorClass='';if(qd.loai==='cong_bo')colorClass='bg-success text-white';else if(qd.loai==='sua_doi')colorClass='bg-warning';else if(qd.loai==='thay_the')colorClass='bg-info text-white';else if(qd.loai==='bai_bo')colorClass='bg-danger text-white';html+=`<div class="card qd-card ${isSelected?'qd-selected':''}" onclick="toggleSelect(${qd.id})"><div class="card-body ${isSelected?'':colorClass}"><strong>${qd.so_quyet_dinh}</strong><br><small>${qd.ten_quyet_dinh||''} - ${qd.ngay_ban_hanh}</small></div></div>`;});$('#qdList').html(html||'<div class="alert alert-warning">Chưa có quyết định</div>');}
+function toggleSelect(id){if(selectedIds.includes(id)){selectedIds=selectedIds.filter(i=>i!==id);}else{selectedIds.push(id);}renderList();}
+$('#btnSoSanh').click(()=>{if(selectedIds.length<2){alert('Chọn ít nhất 2 quyết định!');return;}$('#ketQua').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang so sánh...</div>');$.get(`/api/so_sanh_quyet_dinh?qd_ids=${selectedIds.join(',')}`,function(data){let html='<div class="alert alert-secondary"><strong>CHÚ THÍCH MÀU:</strong> <span class="legend-box" style="background:#d4edda;"></span>Công bố <span class="legend-box" style="background:#fff3cd;"></span>Sửa đổi <span class="legend-box" style="background:#cce5ff;"></span>Thay thế <span class="legend-box" style="background:#f8d7da;"></span>Bãi bỏ <span class="legend-box" style="background:#d4fcbc;"></span>Thêm mới <span class="legend-box" style="background:#fbb6b6;"></span>Bị xóa</div>';html+=`<h5>Các quyết định được chọn:</h5><div class="row mb-3">`;data.quyet_dinhs.forEach(qd=>{let bgClass=qd.loai==='cong_bo'?'table-cong-bo':(qd.loai==='sua_doi'?'table-sua_doi':(qd.loai==='thay_the'?'table-thay_the':'table-bai_bo'));html+=`<div class="col-md-3"><div class="p-2 mb-2 ${bgClass} border rounded"><strong>${qd.so_quyet_dinh}</strong><br><small>${qd.ngay_ban_hanh}</small></div></div>`;});html+=`</div><h5>Danh sách TTHC theo từng quyết định:</h5>`;for(const[qdId,tthcs]of Object.entries(data.tthc_theo_qd)){const qd=data.quyet_dinhs.find(q=>q.id==qdId);if(qd&&tthcs&&tthcs.length>0){let bgClass=qd.loai==='cong_bo'?'table-cong-bo':(qd.loai==='sua_doi'?'table-sua_doi':(qd.loai==='thay_the'?'table-thay_the':'table-bai_bo'));html+=`<div class="card mt-2"><div class="card-header ${bgClass}"><strong>${qd.so_quyet_dinh}</strong> - ${qd.ten_quyet_dinh||''}</div><div class="card-body"><table class="table table-sm"><thead><tr><th>Mã TTHC</th><th>Tên TTHC</th><th>Cấp</th><th>Trạng thái</th></tr></thead><tbody>${tthcs.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td><td>${t[2]||''}</td><td>${t[3]||''}</td></tr>`).join('')}</tbody></table></div></div>`;}}if(data.so_sanh_van_ban&&data.so_sanh_van_ban.length>0){html+=`<h5 class="mt-3">So sánh nội dung văn bản PDF:</h5>`;data.so_sanh_van_ban.forEach(sv=>{html+=`<div class="card mt-2"><div class="card-header bg-secondary text-white">${sv.qd1} ↔ ${sv.qd2}</div><div class="card-body" style="max-height:400px;overflow-y:auto;font-size:12px;">${sv.diff_html}</div></div>`;});}$('#ketQua').html(html);});});
+$('#btnBoChon').click(()=>{selectedIds=[];renderList();$('#ketQua').html('<div class="alert alert-secondary">Chọn quyết định và bấm "So sánh"</div>');});
+</script>
+</body>
+</html>

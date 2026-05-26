@@ -1,0 +1,10 @@
+flask
+pandas
+openpyxl
+markupsafe
+werkzeug
+PyPDF2
+python-docx
+Pillow
+pytesseract
+pdf2image

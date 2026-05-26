@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Xem PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁPp</a>
+        <a href="/quyet_dinh" class="btn btn-outline-light btn-sm">← Quay lại</a>
+    </div>
+</nav>
+<div class="container-fluid mt-2">
+    <div class="row"><div class="col-12"><a href="/uploads/quyet_dinh/{{ file_name }}" download class="btn btn-success mb-2"><i class="fas fa-download"></i> Tải file</a> <button class="btn btn-info mb-2" data-bs-toggle="collapse" data-bs-target="#ocrContent"><i class="fas fa-robot"></i> Xem nội dung OCR</button></div><div class="col-12"><embed src="/uploads/quyet_dinh/{{ file_name }}" type="application/pdf" width="100%" height="800px"></div><div class="col-12 mt-3 collapse" id="ocrContent"><div class="card"><div class="card-header bg-info text-white">Nội dung trích xuất từ PDF (OCR)</div><div class="card-body" style="max-height:400px;overflow-y:auto;white-space:pre-wrap;">{{ noi_dung_ocr or 'Không thể trích xuất nội dung' }}</div></div></div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
