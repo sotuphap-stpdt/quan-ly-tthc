@@ -1,3 +1,5 @@
+import time
+time.sleep(3)  # Chờ 3 giây trước khi khởi động
 import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
@@ -81,7 +83,8 @@ def init_db():
         cap_thuc_hien TEXT,
         trang_thai_cong_khai TEXT,
         so_quyet_dinh TEXT,
-        co_quan_thuc_hien TEXT
+        co_quan_thuc_hien TEXT,
+        trang_thai TEXT DEFAULT 'da_cong_bo'
     )''')
     
     c.execute('''CREATE TABLE IF NOT EXISTS quy_trinh (
@@ -94,7 +97,19 @@ def init_db():
     )''')
     
     conn.commit()
+    
+    # Thêm cột trang_thai nếu chưa có
+    try:
+        conn = sqlite3.connect('tthc.db')
+        c = conn.cursor()
+        c.execute("ALTER TABLE tthc ADD COLUMN trang_thai TEXT DEFAULT 'da_cong_bo'")
+        conn.commit()
+        conn.close()
+    except:
+        pass
+    
     conn.close()
+    print("Đã khởi tạo database với cấu trúc bảng trống!")
 
 init_db()
 
@@ -141,6 +156,8 @@ def dashboard():
         'trang_thai_toan_trinh': 0,
         'trang_thai_cong_khai_mot_phan': 0,
         'trang_thai_chua_cong_khai': 0,
+        'so_da_cong_bo': 0,
+        'so_bai_bo': 0,
         'linh_vuc': []
     }
     
@@ -150,34 +167,54 @@ def dashboard():
             result = c.fetchone()
             if result and result[0]:
                 thong_ke[f'cap_{cap}'] = result[0]
-    except:
-        pass
+    except Exception as e:
+        print(f"Lỗi đếm cấp: {e}")
     
     try:
-        for trang_thai in ['chua_cong_khai', 'cong_khai_mot_phan', 'toan_trinh']:
-            c.execute("SELECT COUNT(*) FROM tthc WHERE trang_thai_cong_khai=?", (trang_thai,))
-            result = c.fetchone()
-            if result and result[0]:
-                if trang_thai == 'toan_trinh':
-                    thong_ke['trang_thai_toan_trinh'] = result[0]
-                elif trang_thai == 'cong_khai_mot_phan':
-                    thong_ke['trang_thai_cong_khai_mot_phan'] = result[0]
-                else:
-                    thong_ke['trang_thai_chua_cong_khai'] = result[0]
-    except:
-        pass
+        c.execute("SELECT COUNT(*) FROM tthc WHERE dvc_toan_trinh = 'X'")
+        thong_ke['trang_thai_toan_trinh'] = c.fetchone()[0] or 0
+        
+        c.execute("SELECT COUNT(*) FROM tthc WHERE dvc_mot_phan = 'X'")
+        thong_ke['trang_thai_cong_khai_mot_phan'] = c.fetchone()[0] or 0
+        
+        c.execute("SELECT COUNT(*) FROM tthc WHERE dvc_cung_cap_tt = 'X'")
+        thong_ke['trang_thai_chua_cong_khai'] = c.fetchone()[0] or 0
+    except Exception as e:
+        print(f"Lỗi đếm trạng thái công khai: {e}")
+    
+    try:
+        c.execute("SELECT COUNT(*) FROM tthc WHERE trang_thai = 'da_cong_bo'")
+        thong_ke['so_da_cong_bo'] = c.fetchone()[0] or 0
+        
+        c.execute("SELECT COUNT(*) FROM tthc WHERE trang_thai = 'bai_bo'")
+        thong_ke['so_bai_bo'] = c.fetchone()[0] or 0
+    except Exception as e:
+        print(f"Lỗi đếm trạng thái: {e}")
     
     try:
         c.execute("SELECT linh_vuc, COUNT(*) FROM tthc WHERE linh_vuc IS NOT NULL AND linh_vuc != '' GROUP BY linh_vuc ORDER BY COUNT(*) DESC")
         raw_data = c.fetchall()
         if raw_data:
             thong_ke['linh_vuc'] = [{'ten': str(row[0]), 'so_luong': row[1]} for row in raw_data]
-        else:
-            thong_ke['linh_vuc'] = [{'ten': 'Chưa có dữ liệu', 'so_luong': 0}]
     except Exception as e:
-        thong_ke['linh_vuc'] = [{'ten': 'Chưa có dữ liệu', 'so_luong': 0}]
+        print(f"Lỗi thống kê lĩnh vực: {e}")
     
     conn.close()
+    
+    print("=" * 50)
+    print("DASHBOARD THỐNG KÊ:")
+    print(f"Cấp Bộ: {thong_ke['cap_bo']}")
+    print(f"Cấp tỉnh: {thong_ke['cap_tinh']}")
+    print(f"Cấp xã: {thong_ke['cap_xa']}")
+    print(f"Dùng chung: {thong_ke['cap_dung_chung']}")
+    print(f"Liên thông: {thong_ke['cap_lien_thong']}")
+    print(f"Toàn trình: {thong_ke['trang_thai_toan_trinh']}")
+    print(f"Một phần: {thong_ke['trang_thai_cong_khai_mot_phan']}")
+    print(f"Cung cấp TT: {thong_ke['trang_thai_chua_cong_khai']}")
+    print(f"Đã công bố: {thong_ke['so_da_cong_bo']}")
+    print(f"Bãi bỏ: {thong_ke['so_bai_bo']}")
+    print("=" * 50)
+    
     return render_template('dashboard.html', thong_ke=thong_ke)
 
 # ==================== API JSON ====================
@@ -223,6 +260,7 @@ def tai_file_mau():
             'Cung cấp thông tin': ['', '', 'X', '', ''],
             'Dịch vụ BCCI': ['Có', '', 'Không', 'Có', ''],
             'Quyết định số': ['123/QĐ-UBND', '456/QĐ-UBND', '789/QĐ-UBND', '111/QĐ-BTP', '222/QĐ-UBND'],
+            'TRẠNG THÁI': ['Đã công bố', 'Đã công bố', 'Đã công bố', 'Bãi bỏ', 'Đã công bố'],
             'Ghi chú': ['Áp dụng từ 01/2024', 'Có phí công chứng', 'Liên thông 3 cấp', 'Theo Nghị định mới', '']
         })
         mau_data.to_excel(writer, sheet_name='Sheet1', index=False)
@@ -243,7 +281,7 @@ def danh_sach_tthc():
     c.execute('''SELECT id, ma_tthc, ten_tthc, linh_vuc, phi, le_phi, cap_thuc_hien, co_quan_thuc_hien,
                 lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
                 dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt,
-                dich_vu_bcci, ghi_chu, so_quyet_dinh
+                dich_vu_bcci, ghi_chu, so_quyet_dinh, trang_thai
                 FROM tthc ORDER BY id DESC''')
     data = c.fetchall()
     conn.close()
@@ -261,9 +299,9 @@ def them_tthc():
         conn = sqlite3.connect('tthc.db')
         c = conn.cursor()
         
-        ma_tthc = request.form.get('ma_tthc', '')
-        ten_tthc = request.form.get('ten_tthc', '')
-        linh_vuc = request.form.get('linh_vuc', '')
+        ma_tthc = request.form.get('ma_tthc', '').strip()
+        ten_tthc = request.form.get('ten_tthc', '').strip()
+        linh_vuc = request.form.get('linh_vuc', '').strip()
         phi = 'X' if request.form.get('phi') == 'on' else ''
         le_phi = 'X' if request.form.get('le_phi') == 'on' else ''
         lien_thong_cung_cap = 'X' if request.form.get('lien_thong_cung_cap') == 'on' else ''
@@ -272,27 +310,47 @@ def them_tthc():
         dvc_toan_trinh = 'X' if request.form.get('dvc_toan_trinh') == 'on' else ''
         dvc_mot_phan = 'X' if request.form.get('dvc_mot_phan') == 'on' else ''
         dvc_cung_cap_tt = 'X' if request.form.get('dvc_cung_cap_tt') == 'on' else ''
-        dich_vu_bcci = request.form.get('dich_vu_bcci', '')
-        ghi_chu = request.form.get('ghi_chu', '')
-        cap_thuc_hien = request.form.get('cap_thuc_hien', '')
-        trang_thai = request.form.get('trang_thai_cong_khai', '')
-        so_qd = request.form.get('so_quyet_dinh', '')
-        co_quan = request.form.get('co_quan_thuc_hien', '')
+        dich_vu_bcci = request.form.get('dich_vu_bcci', '').strip()
+        ghi_chu = request.form.get('ghi_chu', '').strip()
+        cap_thuc_hien = request.form.get('cap_thuc_hien', '').strip()
+        trang_thai_cong_khai = request.form.get('trang_thai_cong_khai', '').strip()
+        so_qd = request.form.get('so_quyet_dinh', '').strip()
+        co_quan = request.form.get('co_quan_thuc_hien', '').strip()
+        trang_thai_tt = request.form.get('trang_thai_tt', 'da_cong_bo')
         
         if not co_quan and cap_thuc_hien:
             co_quan = get_co_quan_by_cap(cap_thuc_hien)
         
         try:
-            c.execute('''INSERT INTO tthc 
-                (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
-                 lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
-                 dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
-                 dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, so_quyet_dinh, co_quan_thuc_hien)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
-                 lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
-                 dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
-                 dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai, so_qd, co_quan))
+            c.execute("SELECT id FROM tthc WHERE ma_tthc = ?", (ma_tthc,))
+            existing = c.fetchone()
+            
+            if existing:
+                c.execute('''UPDATE tthc SET 
+                    ten_tthc=?, linh_vuc=?, phi=?, le_phi=?, 
+                    lien_thong_cung_cap=?, lien_thong_02_cap=?, phi_dia_gioi=?,
+                    dvc_toan_trinh=?, dvc_mot_phan=?, dvc_cung_cap_tt=?, 
+                    dich_vu_bcci=?, ghi_chu=?, cap_thuc_hien=?, trang_thai_cong_khai=?, 
+                    so_quyet_dinh=?, co_quan_thuc_hien=?, trang_thai=?
+                    WHERE ma_tthc = ?''',
+                    (ten_tthc, linh_vuc, phi, le_phi, 
+                     lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
+                     dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
+                     dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                     so_qd, co_quan, trang_thai_tt, ma_tthc))
+            else:
+                c.execute('''INSERT INTO tthc 
+                    (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
+                     lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
+                     dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
+                     dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                     so_quyet_dinh, co_quan_thuc_hien, trang_thai)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                    (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
+                     lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
+                     dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
+                     dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                     so_qd, co_quan, trang_thai_tt))
             
             conn.commit()
             conn.close()
@@ -317,6 +375,12 @@ def import_excel_file(file):
         df = pd.read_excel(filepath, header=0)
         conn = sqlite3.connect('tthc.db')
         c = conn.cursor()
+        
+        # Đảm bảo có quyết định mặc định
+        c.execute("SELECT COUNT(*) FROM quyet_dinh")
+        if c.fetchone()[0] == 0:
+            c.execute("INSERT INTO quyet_dinh (so_quyet_dinh, ten_quyet_dinh, ngay_ban_hanh, loai, mo_ta) VALUES (?,?,?,?,?)",
+                      ("QD001", "Quyết định công bố mặc định", datetime.now().date(), "cong_bo", "Tự động tạo khi import"))
         
         so_luong_thanh_cong = 0
         danh_sach_loi = []
@@ -346,13 +410,22 @@ def import_excel_file(file):
                 so_qd = str(row.get('Quyết định số', '')) if pd.notna(row.get('Quyết định số')) else ''
                 ghi_chu = str(row.get('Ghi chú', '')) if pd.notna(row.get('Ghi chú')) else ''
                 
-                trang_thai = ''
+                if not so_qd or so_qd == 'nan':
+                    c.execute("SELECT so_quyet_dinh FROM quyet_dinh LIMIT 1")
+                    default_qd = c.fetchone()
+                    if default_qd:
+                        so_qd = default_qd[0]
+                
+                trang_thai_excel = str(row.get('TRẠNG THÁI', '')).strip() if pd.notna(row.get('TRẠNG THÁI')) else ''
+                trang_thai_tt = 'bai_bo' if trang_thai_excel == 'Bãi bỏ' else 'da_cong_bo'
+                
+                trang_thai_cong_khai = ''
                 if dvc_toan_trinh == 'X':
-                    trang_thai = 'toan_trinh'
+                    trang_thai_cong_khai = 'toan_trinh'
                 elif dvc_mot_phan == 'X':
-                    trang_thai = 'cong_khai_mot_phan'
+                    trang_thai_cong_khai = 'cong_khai_mot_phan'
                 elif dvc_cung_cap_tt == 'X':
-                    trang_thai = 'chua_cong_khai'
+                    trang_thai_cong_khai = 'chua_cong_khai'
                 
                 if cap_thuc_hien and cap_thuc_hien not in ['bo', 'tinh', 'xa', 'dung_chung', 'lien_thong', '']:
                     danh_sach_loi.append(f"Dong {idx+2}: Cap thuc hien '{cap_thuc_hien}' khong hop le")
@@ -361,16 +434,35 @@ def import_excel_file(file):
                 if not co_quan and cap_thuc_hien:
                     co_quan = get_co_quan_by_cap(cap_thuc_hien)
                 
-                c.execute('''INSERT OR REPLACE INTO tthc 
-                    (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
-                     lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
-                     dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
-                     dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, so_quyet_dinh, co_quan_thuc_hien)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                    (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
-                     lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
-                     dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
-                     dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai, so_qd, co_quan))
+                c.execute("SELECT id FROM tthc WHERE ma_tthc = ?", (ma_tthc,))
+                existing = c.fetchone()
+                
+                if existing:
+                    c.execute('''UPDATE tthc SET 
+                        ten_tthc=?, linh_vuc=?, phi=?, le_phi=?, 
+                        lien_thong_cung_cap=?, lien_thong_02_cap=?, phi_dia_gioi=?,
+                        dvc_toan_trinh=?, dvc_mot_phan=?, dvc_cung_cap_tt=?, 
+                        dich_vu_bcci=?, ghi_chu=?, cap_thuc_hien=?, trang_thai_cong_khai=?, 
+                        so_quyet_dinh=?, co_quan_thuc_hien=?, trang_thai=?
+                        WHERE ma_tthc = ?''',
+                        (ten_tthc, linh_vuc, phi, le_phi, 
+                         lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
+                         dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
+                         dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                         so_qd, co_quan, trang_thai_tt, ma_tthc))
+                else:
+                    c.execute('''INSERT INTO tthc 
+                        (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
+                         lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
+                         dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
+                         dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                         so_quyet_dinh, co_quan_thuc_hien, trang_thai)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                        (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
+                         lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
+                         dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
+                         dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                         so_qd, co_quan, trang_thai_tt))
                 
                 so_luong_thanh_cong += 1
                 danh_sach_thanh_cong.append(f"{ma_tthc} - {ten_tthc}")
@@ -391,7 +483,7 @@ def import_excel_file(file):
             thong_bao_js = thong_bao.replace("'", "\\'").replace('"', '\\"').replace("\n", "\\n")
             return f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Import thành công</title></head><body><script>alert("{thong_bao_js}"); window.location.href="/tthc";</script></body></html>'''
         else:
-            loi_text = "\n".join(danh_sach_loi[:3]) if danh_sach_loi else "Không tìm thấy dữ liệu hợp lệ. Kiểm tra cột MÃ TTHC."
+            loi_text = "\n".join(danh_sach_loi[:5]) if danh_sach_loi else "Không tìm thấy dữ liệu hợp lệ."
             loi_text_js = loi_text.replace("'", "\\'").replace('"', '\\"').replace("\n", "\\n")
             return f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Import thất bại</title></head><body><script>alert("❌ IMPORT THẤT BẠI!\n\n{loi_text_js}"); window.location.href="/tthc/them";</script></body></html>'''
             
@@ -406,9 +498,9 @@ def sua_tthc(id):
     c = conn.cursor()
     
     if request.method == 'POST':
-        ma_tthc = request.form.get('ma_tthc', '')
-        ten_tthc = request.form.get('ten_tthc', '')
-        linh_vuc = request.form.get('linh_vuc', '')
+        ma_tthc = request.form.get('ma_tthc', '').strip()
+        ten_tthc = request.form.get('ten_tthc', '').strip()
+        linh_vuc = request.form.get('linh_vuc', '').strip()
         phi = 'X' if request.form.get('phi') == 'on' else ''
         le_phi = 'X' if request.form.get('le_phi') == 'on' else ''
         lien_thong_cung_cap = 'X' if request.form.get('lien_thong_cung_cap') == 'on' else ''
@@ -417,12 +509,13 @@ def sua_tthc(id):
         dvc_toan_trinh = 'X' if request.form.get('dvc_toan_trinh') == 'on' else ''
         dvc_mot_phan = 'X' if request.form.get('dvc_mot_phan') == 'on' else ''
         dvc_cung_cap_tt = 'X' if request.form.get('dvc_cung_cap_tt') == 'on' else ''
-        dich_vu_bcci = request.form.get('dich_vu_bcci', '')
-        ghi_chu = request.form.get('ghi_chu', '')
-        cap_thuc_hien = request.form.get('cap_thuc_hien', '')
-        trang_thai = request.form.get('trang_thai_cong_khai', '')
-        so_qd = request.form.get('so_quyet_dinh', '')
-        co_quan = request.form.get('co_quan_thuc_hien', '')
+        dich_vu_bcci = request.form.get('dich_vu_bcci', '').strip()
+        ghi_chu = request.form.get('ghi_chu', '').strip()
+        cap_thuc_hien = request.form.get('cap_thuc_hien', '').strip()
+        trang_thai_cong_khai = request.form.get('trang_thai_cong_khai', '').strip()
+        so_qd = request.form.get('so_quyet_dinh', '').strip()
+        co_quan = request.form.get('co_quan_thuc_hien', '').strip()
+        trang_thai_tt = request.form.get('trang_thai_tt', 'da_cong_bo')
         
         if not co_quan and cap_thuc_hien:
             co_quan = get_co_quan_by_cap(cap_thuc_hien)
@@ -432,12 +525,14 @@ def sua_tthc(id):
                 ma_tthc=?, ten_tthc=?, linh_vuc=?, phi=?, le_phi=?, 
                 lien_thong_cung_cap=?, lien_thong_02_cap=?, phi_dia_gioi=?,
                 dvc_toan_trinh=?, dvc_mot_phan=?, dvc_cung_cap_tt=?, 
-                dich_vu_bcci=?, ghi_chu=?, cap_thuc_hien=?, trang_thai_cong_khai=?, so_quyet_dinh=?, co_quan_thuc_hien=?
+                dich_vu_bcci=?, ghi_chu=?, cap_thuc_hien=?, trang_thai_cong_khai=?, 
+                so_quyet_dinh=?, co_quan_thuc_hien=?, trang_thai=?
                 WHERE id=?''',
                 (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
                  lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
                  dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
-                 dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai, so_qd, co_quan, id))
+                 dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                 so_qd, co_quan, trang_thai_tt, id))
             
             conn.commit()
             conn.close()
@@ -630,7 +725,7 @@ def api_so_sanh_quyet_dinh():
     for qd_id in ids:
         qd = next((q for q in quyet_dinhs if q['id'] == qd_id), None)
         if qd:
-            c.execute("SELECT ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai FROM tthc WHERE so_quyet_dinh=?", (qd['so_quyet_dinh'],))
+            c.execute("SELECT ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc WHERE so_quyet_dinh=?", (qd['so_quyet_dinh'],))
             tthc_theo_qd[qd_id] = c.fetchall()
     conn.close()
     so_sanh_van_ban = []
@@ -680,13 +775,14 @@ def api_bao_cao_data():
     phi_le_phi = request.args.get('phi_le_phi', '')
     dich_vu_bcci = request.args.get('dich_vu_bcci', '')
     co_quan_thuc_hien = request.args.get('co_quan_thuc_hien', '')
+    trang_thai_tt = request.args.get('trang_thai_tt', '')
     
     conn = sqlite3.connect('tthc.db')
     c = conn.cursor()
     
     sql = """SELECT t.ma_tthc, t.ten_tthc, t.linh_vuc, t.phi, t.le_phi, 
                     t.cap_thuc_hien, t.co_quan_thuc_hien, t.dvc_toan_trinh, t.dvc_mot_phan, t.dvc_cung_cap_tt,
-                    t.dich_vu_bcci, t.ghi_chu, t.so_quyet_dinh
+                    t.dich_vu_bcci, t.ghi_chu, t.so_quyet_dinh, t.trang_thai
              FROM tthc t WHERE 1=1"""
     params = []
     
@@ -709,6 +805,12 @@ def api_bao_cao_data():
             sql += " AND t.dvc_mot_phan = 'X'"
         elif trang_thai == 'cung_cap_tt':
             sql += " AND t.dvc_cung_cap_tt = 'X'"
+    
+    if trang_thai_tt and trang_thai_tt != '':
+        if trang_thai_tt == 'da_cong_bo':
+            sql += " AND t.trang_thai = 'da_cong_bo'"
+        elif trang_thai_tt == 'bai_bo':
+            sql += " AND t.trang_thai = 'bai_bo'"
     
     if phi_le_phi and phi_le_phi != '':
         if phi_le_phi == 'co_phi':
@@ -736,9 +838,11 @@ def api_bao_cao_data():
     c.execute(sql, params)
     data = c.fetchall()
     
+    # Tổng số
     c.execute("SELECT COUNT(*) FROM tthc")
     tong_so = c.fetchone()[0]
     
+    # Thống kê DVC trực tuyến
     c.execute("SELECT COUNT(*) FROM tthc WHERE dvc_toan_trinh = 'X'")
     so_toan_trinh = c.fetchone()[0]
     
@@ -747,6 +851,26 @@ def api_bao_cao_data():
     
     c.execute("SELECT COUNT(*) FROM tthc WHERE dvc_cung_cap_tt = 'X'")
     so_cung_cap_tt = c.fetchone()[0]
+    
+    # Thống kê trạng thái
+    c.execute("SELECT COUNT(*) FROM tthc WHERE trang_thai = 'da_cong_bo'")
+    so_da_cong_bo = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM tthc WHERE trang_thai = 'bai_bo'")
+    so_bai_bo = c.fetchone()[0]
+    
+    # Thống kê Phí, Lệ phí, Miễn thu, BCCI
+    c.execute("SELECT COUNT(*) FROM tthc WHERE phi = 'X'")
+    so_co_phi = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM tthc WHERE le_phi = 'X'")
+    so_co_le_phi = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM tthc WHERE (phi IS NULL OR phi = '') AND (le_phi IS NULL OR le_phi = '')")
+    so_mien_thu = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM tthc WHERE dich_vu_bcci IS NOT NULL AND dich_vu_bcci != ''")
+    so_co_bcci = c.fetchone()[0]
     
     conn.close()
     
@@ -765,7 +889,8 @@ def api_bao_cao_data():
             'cung_cap_tt': 'X' if row[9] == 'X' else '',
             'dich_vu_bcci': row[10] or '',
             'ghi_chu': row[11] or '',
-            'so_quyet_dinh': row[12] or ''
+            'so_quyet_dinh': row[12] or '',
+            'trang_thai': row[13] or 'da_cong_bo'
         })
     
     return jsonify({
@@ -773,7 +898,13 @@ def api_bao_cao_data():
         'tong_so': tong_so,
         'so_toan_trinh': so_toan_trinh,
         'so_mot_phan': so_mot_phan,
-        'so_cung_cap_tt': so_cung_cap_tt
+        'so_cung_cap_tt': so_cung_cap_tt,
+        'so_da_cong_bo': so_da_cong_bo,
+        'so_bai_bo': so_bai_bo,
+        'so_co_phi': so_co_phi,
+        'so_co_le_phi': so_co_le_phi,
+        'so_mien_thu': so_mien_thu,
+        'so_co_bcci': so_co_bcci
     })
 
 @app.route('/export_bao_cao_excel')
@@ -788,13 +919,14 @@ def export_bao_cao_excel():
     phi_le_phi = request.args.get('phi_le_phi', '')
     dich_vu_bcci = request.args.get('dich_vu_bcci', '')
     co_quan_thuc_hien = request.args.get('co_quan_thuc_hien', '')
+    trang_thai_tt = request.args.get('trang_thai_tt', '')
     
     conn = sqlite3.connect('tthc.db')
     c = conn.cursor()
     
     sql = """SELECT t.ma_tthc, t.ten_tthc, t.linh_vuc, t.phi, t.le_phi, 
                     t.cap_thuc_hien, t.co_quan_thuc_hien, t.dvc_toan_trinh, t.dvc_mot_phan, t.dvc_cung_cap_tt,
-                    t.dich_vu_bcci, t.ghi_chu, t.so_quyet_dinh
+                    t.dich_vu_bcci, t.ghi_chu, t.so_quyet_dinh, t.trang_thai
              FROM tthc t WHERE 1=1"""
     params = []
     
@@ -817,6 +949,12 @@ def export_bao_cao_excel():
             sql += " AND t.dvc_mot_phan = 'X'"
         elif trang_thai == 'cung_cap_tt':
             sql += " AND t.dvc_cung_cap_tt = 'X'"
+    
+    if trang_thai_tt and trang_thai_tt != '':
+        if trang_thai_tt == 'da_cong_bo':
+            sql += " AND t.trang_thai = 'da_cong_bo'"
+        elif trang_thai_tt == 'bai_bo':
+            sql += " AND t.trang_thai = 'bai_bo'"
     
     if phi_le_phi and phi_le_phi != '':
         if phi_le_phi == 'co_phi':
@@ -848,7 +986,7 @@ def export_bao_cao_excel():
     df = pd.DataFrame(data, columns=[
         'MÃ TTHC', 'TÊN TTHC', 'LĨNH VỰC', 'PHÍ', 'LỆ PHÍ',
         'CẤP THỰC HIỆN', 'CƠ QUAN THỰC HIỆN', 'TOÀN TRÌNH', 'MỘT PHẦN', 'CUNG CẤP TT',
-        'DỊCH VỤ BCCI', 'GHI CHÚ', 'QUYẾT ĐỊNH SỐ'
+        'DỊCH VỤ BCCI', 'GHI CHÚ', 'QUYẾT ĐỊNH SỐ', 'TRẠNG THÁI'
     ])
     
     df['PHÍ'] = df['PHÍ'].apply(lambda x: 'X' if x == 'X' else '')
@@ -856,6 +994,7 @@ def export_bao_cao_excel():
     df['TOÀN TRÌNH'] = df['TOÀN TRÌNH'].apply(lambda x: 'X' if x == 'X' else '')
     df['MỘT PHẦN'] = df['MỘT PHẦN'].apply(lambda x: 'X' if x == 'X' else '')
     df['CUNG CẤP TT'] = df['CUNG CẤP TT'].apply(lambda x: 'X' if x == 'X' else '')
+    df['TRẠNG THÁI'] = df['TRẠNG THÁI'].apply(lambda x: 'Đã công bố' if x == 'da_cong_bo' else 'Bãi bỏ')
     
     cap_map = {'bo': 'Cấp Bộ', 'tinh': 'Cấp tỉnh', 'xa': 'Cấp xã', 'dung_chung': 'Dùng chung', 'lien_thong': 'Liên thông'}
     df['CẤP THỰC HIỆN'] = df['CẤP THỰC HIỆN'].apply(lambda x: cap_map.get(x, x))
@@ -892,12 +1031,36 @@ def tim_kiem():
     conn = sqlite3.connect('tthc.db')
     c = conn.cursor()
     if tu_khoa:
-        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai FROM tthc WHERE ten_tthc LIKE ? OR ma_tthc LIKE ?", (f'%{tu_khoa}%', f'%{tu_khoa}%'))
+        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc WHERE ten_tthc LIKE ? OR ma_tthc LIKE ?", (f'%{tu_khoa}%', f'%{tu_khoa}%'))
     else:
-        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai FROM tthc LIMIT 20")
+        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc LIMIT 20")
     ket_qua = c.fetchall()
     conn.close()
     return render_template('tim_kiem.html', ket_qua=ket_qua, tu_khoa=tu_khoa)
 
+@app.route('/api/tim_kiem')
+def api_tim_kiem():
+    tu_khoa = request.args.get('q', '')
+    conn = sqlite3.connect('tthc.db')
+    c = conn.cursor()
+    if tu_khoa:
+        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc WHERE ten_tthc LIKE ? OR ma_tthc LIKE ?", (f'%{tu_khoa}%', f'%{tu_khoa}%'))
+    else:
+        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc LIMIT 20")
+    data = c.fetchall()
+    conn.close()
+    
+    ket_qua = []
+    for row in data:
+        ket_qua.append({
+            'id': row[0],
+            'ma_tthc': row[1],
+            'ten_tthc': row[2],
+            'cap_thuc_hien': row[3],
+            'trang_thai_cong_khai': row[4],
+            'trang_thai': row[5]
+        })
+    
+    return jsonify({'data': ket_qua})
 if __name__ == '__main__':
     app.run(debug=True)
