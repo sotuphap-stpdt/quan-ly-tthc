@@ -6,54 +6,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #f0f2f5; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh;
-        }
-        .main-content { 
-            flex: 1; 
-            padding-bottom: 20px;
-        }
-        .detail-label { 
-            font-weight: bold; 
-            background-color: #e9ecef; 
-            width: 250px; 
-        }
-        .detail-value { 
-            word-break: break-word; 
-        }
-        .card-header-custom { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-        }
-        .section-title { 
-            background-color: #f8f9fa; 
-            padding: 10px; 
-            margin-top: 20px; 
-            margin-bottom: 15px; 
-            border-left: 4px solid #007bff; 
-            font-weight: bold; 
-        }
-        .footer { 
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
-            color: white; 
-            padding: 25px 0 20px; 
-            margin-top: 30px;
-            width: 100%;
-        }
+        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+        .main-content { flex: 1; }
+        .detail-label { font-weight: bold; background-color: #e9ecef; width: 250px; }
+        .detail-value { word-break: break-word; }
+        .card-header-custom { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .section-title { background-color: #f8f9fa; padding: 10px; margin-top: 20px; margin-bottom: 15px; border-left: 4px solid #007bff; font-weight: bold; }
+        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
         .footer .footer-info { text-align: center; }
         .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
         .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
-        .footer .copyright { 
-            text-align: center; 
-            padding-top: 15px; 
-            margin-top: 15px; 
-            border-top: 1px solid rgba(255,255,255,0.2); 
-            font-size: 0.8rem; 
-            opacity: 0.7;
-        }
+        .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
+        .dropdown-menu { min-width: 200px; }
+        .dropdown-item i { width: 20px; margin-right: 8px; }
     </style>
 </head>
 <body>
@@ -70,6 +35,11 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
                         <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
+                        {% if role == 'admin' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                        <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
@@ -78,6 +48,22 @@
                 <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
                 <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
             </ul>
+        </div>
+        <div class="ms-auto">
+            <div class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/doi_mat_khau"><i class="fas fa-key"></i> Đổi mật khẩu</a></li>
+                    {% if role == 'admin' %}
+                    <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                    <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
@@ -91,157 +77,10 @@
             <div class="card-body">
                 {% if tthc and tthc|length > 0 %}
                 
-                <!-- Phần 1: Thông tin cơ bản -->
                 <div class="section-title"><i class="fas fa-info-circle"></i> Thông tin cơ bản</div>
                 <div class="table-responsive">
                     <table class="table table-bordered">
-                        <tr>
-                            <td class="detail-label">Mã TTHC</td>
-                            <td class="detail-value"><strong>{{ tthc[1] if tthc|length > 1 else '' }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Tên TTHC</td>
-                            <td class="detail-value"><strong>{{ tthc[2] if tthc|length > 2 else '' }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Lĩnh vực</td>
-                            <td class="detail-value">{{ tthc[3] if tthc|length > 3 and tthc[3] else '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Phí</td>
-                            <td class="detail-value">{% if tthc[4] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có phí{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Lệ phí</td>
-                            <td class="detail-value">{% if tthc[5] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có lệ phí{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- Phần 2: Liên thông -->
-                <div class="section-title"><i class="fas fa-link"></i> TTHC liên thông, không thuộc địa giới hành chính</div>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td class="detail-label">Cùng cấp</td>
-                            <td class="detail-value">{% if tthc[6] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">02 cấp</td>
-                            <td class="detail-value">{% if tthc[7] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Phi địa giới</td>
-                            <td class="detail-value">{% if tthc[8] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- Phần 3: Dịch vụ công trực tuyến -->
-                <div class="section-title"><i class="fas fa-globe"></i> Dịch vụ công trực tuyến</div>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td class="detail-label">Toàn trình</td>
-                            <td class="detail-value">{% if tthc[9] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Một phần</td>
-                            <td class="detail-value">{% if tthc[10] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Cung cấp thông tin</td>
-                            <td class="detail-value">{% if tthc[11] == 'X' %}<i class="fas fa-check-circle text-success"></i> Có{% else %}<i class="fas fa-times-circle text-muted"></i> Không{% endif %}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- Phần 4: Thông tin bổ sung -->
-                <div class="section-title"><i class="fas fa-plus-circle"></i> Thông tin bổ sung</div>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td class="detail-label">Dịch vụ BCCI</td>
-                            <td class="detail-value">{{ tthc[12] if tthc|length > 12 and tthc[12] else '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Ghi chú</td>
-                            <td class="detail-value">{{ tthc[13] if tthc|length > 13 and tthc[13] else '-' }}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- Phần 5: Cấp thực hiện và Trạng thái -->
-                <div class="section-title"><i class="fas fa-building"></i> Cấp thực hiện và Trạng thái</div>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td class="detail-label">Cấp thực hiện</td>
-                            <td class="detail-value">
-                                {% set cap_map = {'bo':'Cấp Bộ', 'tinh':'Cấp tỉnh', 'xa':'Cấp xã', 'dung_chung':'Dùng chung', 'lien_thong':'Liên thông'} %}
-                                {{ cap_map.get(tthc[14], tthc[14] or '-') }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Trạng thái công khai</td>
-                            <td class="detail-value">
-                                {% set tt_map = {'toan_trinh':'Toàn trình', 'cong_khai_mot_phan':'Công khai một phần', 'chua_cong_khai':'Chưa công khai'} %}
-                                {{ tt_map.get(tthc[15], tthc[15] or '-') }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Trạng thái</td>
-                            <td class="detail-value">
-                                {% set tt_text = 'Đã công bố' if tthc[18] == 'da_cong_bo' else 'Bãi bỏ' %}
-                                {% set tt_class = 'bg-success' if tthc[18] == 'da_cong_bo' else 'bg-danger' %}
-                                <span class="badge {{ tt_class }}">{{ tt_text }}</span>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <!-- Phần 6: Quyết định và Cơ quan thực hiện -->
-                <div class="section-title"><i class="fas fa-gavel"></i> Quyết định và Cơ quan thực hiện</div>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td class="detail-label">Quyết định số</td>
-                            <td class="detail-value"><strong>{{ tthc[16] if tthc|length > 16 and tthc[16] else '-' }}</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="detail-label">Cơ quan thực hiện</td>
-                            <td class="detail-value">{{ tthc[17] if tthc|length > 17 and tthc[17] else '-' }}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                {% else %}
-                <div class="alert alert-danger text-center">Không tìm thấy dữ liệu thủ tục hành chính</div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <div class="mt-3 text-center">
-            <a href="/tthc" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại danh sách</a>
-            {% if tthc %}
-            <a href="/tthc/sua/{{ tthc[0] }}" class="btn btn-warning"><i class="fas fa-edit"></i> Sửa thủ tục</a>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<footer class="footer">
-    <div class="container">
-        <div class="footer-info">
-            <p><i class="fas fa-building"></i> <strong>Sở Tư pháp tỉnh Đồng Tháp</strong></p>
-            <p><i class="fas fa-map-marker-alt"></i> 381 Hùng Vương, phường Đạo Thạnh, tỉnh Đồng Tháp</p>
-            <p><i class="fas fa-phone-alt"></i> 085 3993 892 &nbsp;&nbsp;|&nbsp;&nbsp; <i class="fas fa-envelope"></i> stp@dongthap.gov.vn</p>
-        </div>
-        <div class="copyright">
-            <p>© 2026 Hệ thống quản lý Thủ tục hành chính Sở Tư pháp tỉnh Đồng Tháp. Phiên bản 1.0</p>
-        </div>
-    </div>
-</footer>
-
-</body>
-</html>
+                        <tr><td class="detail-label">Mã TTHC</th><td class="detail-value"><strong>{{ tthc[1] if tthc|length > 1 else '' }}</strong></th></tr>
+                        <tr><td class="detail-label">Tên TTHC</th><td class="detail-value"><strong>{{ tthc[2] if tthc|length > 2 else '' }}</strong></th></tr>
+                        <tr><td class="detail-label">Lĩnh vực</th><td class="detail-value">{{ tthc[3] if tthc|length > 3 and tthc[3] else '-' }}</th></tr>
+                        <tr><td class="detail-label">Phí</th><td class="detail-value">{% if t
