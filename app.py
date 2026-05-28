@@ -1,5 +1,5 @@
 import time
-time.sleep(3)  # Chờ 3 giây trước khi khởi động
+time.sleep(2)  # Chờ 3 giây trước khi khởi động
 import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
