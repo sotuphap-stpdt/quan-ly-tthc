@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</title>
+    <title>Dashboard - HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -20,7 +20,7 @@
         .dashboard-title h2 { font-size: 1.6rem; margin-bottom: 0.5rem; }
         .card-header-custom { border-radius: 15px 15px 0 0; padding: 12px 20px; font-weight: 600; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; }
         .chart-container { position: relative; height: 280px; width: 100%; }
-        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; }
+        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
         .footer .footer-info { text-align: center; }
         .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
         .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
@@ -45,6 +45,9 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
                         <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
+                        {% if role == 'admin' %}
+                        <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
@@ -53,6 +56,10 @@
                 <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
                 <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
             </ul>
+        </div>
+        <div class="ms-auto">
+            <span class="text-white me-3"><i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}</span>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
         </div>
     </div>
 </nav>
@@ -178,175 +185,65 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Hàm kiểm tra an toàn khi cập nhật innerText
-    function updateElementText(elementId, value) {
-        var element = document.getElementById(elementId);
-        if (element) {
-            element.innerText = value;
-        } else {
-            console.warn("Element not found: " + elementId);
-        }
+    var thongKeData = {{ thong_ke | tojson | safe }};
+    
+    function getSafeNumber(value, defaultValue = 0) {
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string' && !isNaN(parseFloat(value))) return parseFloat(value);
+        return defaultValue;
     }
     
-    // Lấy dữ liệu từ Flask
-    var thongKeData = {};
-    try {
-        thongKeData = {{ thong_ke | tojson | safe }};
-    } catch(e) {
-        console.error("Lỗi parse dữ liệu:", e);
-        thongKeData = {};
-    }
-    
-    console.log("Dashboard Data:", thongKeData);
-    
-    // Hàm lấy giá trị an toàn
-    function getVal(obj, key, def) {
-        if (obj && typeof obj === 'object' && key in obj) {
-            var v = obj[key];
-            if (typeof v === 'number') return v;
-            if (typeof v === 'string' && !isNaN(parseFloat(v))) return parseFloat(v);
-            return def;
-        }
-        return def;
-    }
-    
-    // Lấy tất cả dữ liệu
-    var capBo = getVal(thongKeData, 'cap_bo', 0);
-    var capTinh = getVal(thongKeData, 'cap_tinh', 0);
-    var capXa = getVal(thongKeData, 'cap_xa', 0);
-    var capDungChung = getVal(thongKeData, 'cap_dung_chung', 0);
-    var capLienThong = getVal(thongKeData, 'cap_lien_thong', 0);
-    var toanTrinh = getVal(thongKeData, 'trang_thai_toan_trinh', 0);
-    var motPhan = getVal(thongKeData, 'trang_thai_cong_khai_mot_phan', 0);
-    var chuaCK = getVal(thongKeData, 'trang_thai_chua_cong_khai', 0);
-    var daCongBo = getVal(thongKeData, 'so_da_cong_bo', 0);
-    var baiBo = getVal(thongKeData, 'so_bai_bo', 0);
+    var capBo = getSafeNumber(thongKeData.cap_bo);
+    var capTinh = getSafeNumber(thongKeData.cap_tinh);
+    var capXa = getSafeNumber(thongKeData.cap_xa);
+    var capDungChung = getSafeNumber(thongKeData.cap_dung_chung);
+    var capLienThong = getSafeNumber(thongKeData.cap_lien_thong);
+    var toanTrinh = getSafeNumber(thongKeData.trang_thai_toan_trinh);
+    var motPhan = getSafeNumber(thongKeData.trang_thai_cong_khai_mot_phan);
+    var chuaCK = getSafeNumber(thongKeData.trang_thai_chua_cong_khai);
+    var daCongBo = getSafeNumber(thongKeData.so_da_cong_bo);
+    var baiBo = getSafeNumber(thongKeData.so_bai_bo);
     var linhVucList = (thongKeData.linh_vuc && Array.isArray(thongKeData.linh_vuc)) ? thongKeData.linh_vuc : [];
     
-    // Cập nhật số liệu lên HTML (kiểm tra element tồn tại)
-    updateElementText('countCapBo', capBo);
-    updateElementText('countCapTinh', capTinh);
-    updateElementText('countCapXa', capXa);
-    updateElementText('countDungChung', capDungChung);
-    updateElementText('countLienThong', capLienThong);
-    updateElementText('countDaCongBo', daCongBo);
-    updateElementText('countBaiBo', baiBo);
-    updateElementText('sumToanTrinh', toanTrinh);
-    updateElementText('sumMotPhan', motPhan);
-    updateElementText('sumChuaCK', chuaCK);
-    updateElementText('sumTotal', capBo + capTinh + capXa + capDungChung + capLienThong);
+    document.getElementById('countCapBo').innerText = capBo;
+    document.getElementById('countCapTinh').innerText = capTinh;
+    document.getElementById('countCapXa').innerText = capXa;
+    document.getElementById('countDungChung').innerText = capDungChung;
+    document.getElementById('countLienThong').innerText = capLienThong;
+    document.getElementById('countDaCongBo').innerText = daCongBo;
+    document.getElementById('countBaiBo').innerText = baiBo;
+    document.getElementById('sumToanTrinh').innerText = toanTrinh;
+    document.getElementById('sumMotPhan').innerText = motPhan;
+    document.getElementById('sumChuaCK').innerText = chuaCK;
+    document.getElementById('sumTotal').innerText = capBo + capTinh + capXa + capDungChung + capLienThong;
     
-    // Biểu đồ cột - Thống kê theo cấp
     var barCtx = document.getElementById('barChart');
     if (barCtx) {
         new Chart(barCtx.getContext('2d'), {
             type: 'bar',
-            data: {
-                labels: ['Cấp Bộ', 'Cấp tỉnh', 'Cấp xã', 'Dùng chung', 'Liên thông'],
-                datasets: [{
-                    label: 'Số lượng thủ tục',
-                    data: [capBo, capTinh, capXa, capDungChung, capLienThong],
-                    backgroundColor: ['#dc3545', '#0d6efd', '#198754', '#ffc107', '#0dcaf0'],
-                    borderRadius: 8
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: true, 
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-                plugins: { legend: { position: 'top' } }
-            }
+            data: { labels: ['Cấp Bộ', 'Cấp tỉnh', 'Cấp xã', 'Dùng chung', 'Liên thông'], datasets: [{ label: 'Số lượng thủ tục', data: [capBo, capTinh, capXa, capDungChung, capLienThong], backgroundColor: ['#dc3545', '#0d6efd', '#198754', '#ffc107', '#0dcaf0'], borderRadius: 8 }] },
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
     }
     
-    // Biểu đồ tròn - Thống kê trạng thái công khai
     var pieCtx = document.getElementById('pieChart');
     if (pieCtx) {
-        var tong = toanTrinh + motPhan + chuaCK;
+        var tongTrangThai = toanTrinh + motPhan + chuaCK;
         new Chart(pieCtx.getContext('2d'), {
             type: 'pie',
-            data: {
-                labels: ['Toàn trình', 'Một phần', 'Chưa công khai'],
-                datasets: [{ 
-                    data: [toanTrinh, motPhan, chuaCK], 
-                    backgroundColor: ['#28a745', '#ffc107', '#dc3545'], 
-                    hoverOffset: 10 
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    tooltip: { 
-                        callbacks: { 
-                            label: function(ctx) { 
-                                var v = ctx.raw; 
-                                var p = tong > 0 ? Math.round(v / tong * 100) : 0; 
-                                return ctx.label + ': ' + v + ' (' + p + '%)'; 
-                            } 
-                        } 
-                    },
-                    legend: { position: 'bottom' }
-                }
-            }
+            data: { labels: ['Toàn trình', 'Một phần', 'Chưa công khai'], datasets: [{ data: [toanTrinh, motPhan, chuaCK], backgroundColor: ['#198754', '#ffc107', '#dc3545'], hoverOffset: 10 }] },
+            options: { responsive: true, plugins: { tooltip: { callbacks: { label: function(ctx) { var v = ctx.raw; var p = tongTrangThai > 0 ? Math.round(v / tongTrangThai * 100) : 0; return ctx.label + ': ' + v + ' (' + p + '%)'; } } } } }
         });
     }
     
-    // Biểu đồ lĩnh vực
     var linhVucCtx = document.getElementById('linhVucChart');
-    if (linhVucCtx) {
-        if (linhVucList.length > 0) {
-            var validData = linhVucList.filter(function(item) {
-                return item.ten && item.ten !== 'Chưa có dữ liệu' && item.so_luong > 0;
-            });
-            
-            if (validData.length > 0) {
-                var labels = validData.map(function(item) { 
-                    var ten = item.ten || 'Chưa phân loại'; 
-                    return ten.length > 25 ? ten.substring(0, 22) + '...' : ten; 
-                });
-                var values = validData.map(function(item) { return item.so_luong || 0; });
-                
-                new Chart(linhVucCtx.getContext('2d'), { 
-                    type: 'bar', 
-                    data: { 
-                        labels: labels, 
-                        datasets: [{ 
-                            label: 'Số lượng thủ tục', 
-                            data: values, 
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)', 
-                            borderRadius: 5 
-                        }] 
-                    }, 
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: true,
-                        scales: { 
-                            y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'Số lượng' } }, 
-                            x: { ticks: { autoSkip: false, rotation: 15, font: { size: 11 } } } 
-                        } 
-                    } 
-                });
-            } else {
-                linhVucCtx.parentElement.innerHTML = '<div class="alert alert-info text-center">Chưa có dữ liệu lĩnh vực để hiển thị biểu đồ</div>';
-            }
-        } else {
-            linhVucCtx.parentElement.innerHTML = '<div class="alert alert-info text-center">Chưa có dữ liệu lĩnh vực để hiển thị biểu đồ</div>';
-        }
+    if (linhVucCtx && linhVucList.length > 0 && !(linhVucList.length === 1 && linhVucList[0].ten === 'Chưa có dữ liệu')) {
+        var labels = linhVucList.map(function(item) { var ten = item.ten || 'Chưa phân loại'; return ten.length > 25 ? ten.substring(0, 22) + '...' : ten; });
+        var data = linhVucList.map(function(item) { return item.so_luong || 0; });
+        new Chart(linhVucCtx.getContext('2d'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Số lượng thủ tục', data: data, backgroundColor: 'rgba(54, 162, 235, 0.7)', borderRadius: 5 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { autoSkip: false, rotation: 15, font: { size: 11 } } } } } });
+    } else if (linhVucCtx) { 
+        linhVucCtx.parentElement.innerHTML = '<div class="alert alert-info text-center">Chưa có dữ liệu lĩnh vực để hiển thị biểu đồ</div>'; 
     }
-    
-    // Debug console
-    console.log("=== DASHBOARD VALUES ===");
-    console.log("Cấp Bộ:", capBo);
-    console.log("Cấp tỉnh:", capTinh);
-    console.log("Cấp xã:", capXa);
-    console.log("Dùng chung:", capDungChung);
-    console.log("Liên thông:", capLienThong);
-    console.log("Toàn trình:", toanTrinh);
-    console.log("Một phần:", motPhan);
-    console.log("Chưa CK:", chuaCK);
-    console.log("Đã công bố:", daCongBo);
-    console.log("Bãi bỏ:", baiBo);
-    console.log("Lĩnh vực:", linhVucList);
 </script>
 </body>
 </html>
