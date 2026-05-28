@@ -18,6 +18,8 @@
         .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
         .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
         .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
+        .dropdown-menu { min-width: 200px; }
+        .dropdown-item i { width: 20px; margin-right: 8px; }
     </style>
 </head>
 <body>
@@ -37,7 +39,9 @@
                         <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
                         <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
                         {% if role == 'admin' %}
+                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                        <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
                         {% endif %}
                     </ul>
                 </li>
@@ -49,8 +53,20 @@
             </ul>
         </div>
         <div class="ms-auto">
-            <span class="text-white me-3"><i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}</span>
-            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+            <div class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/doi_mat_khau"><i class="fas fa-key"></i> Đổi mật khẩu</a></li>
+                    {% if role == 'admin' %}
+                    <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                    <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
