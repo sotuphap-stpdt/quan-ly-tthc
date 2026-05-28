@@ -14,3 +14,5 @@ build/
 .env
 venv/
 env/
+*.sqlite3
+*.sqlite
