@@ -17,11 +17,13 @@
         .table-thay_the { background-color: #cce5ff; }
         .table-bai_bo { background-color: #f8d7da; }
         .legend-box { display: inline-block; width: 20px; height: 20px; margin-right: 5px; border-radius: 3px; }
-        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; }
+        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
         .footer .footer-info { text-align: center; }
         .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
         .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
         .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
+        .dropdown-menu { min-width: 200px; }
+        .dropdown-item i { width: 20px; margin-right: 8px; }
     </style>
 </head>
 <body>
@@ -38,6 +40,11 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
                         <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
+                        {% if role == 'admin' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                        <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
@@ -46,6 +53,22 @@
                 <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
                 <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
             </ul>
+        </div>
+        <div class="ms-auto">
+            <div class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/doi_mat_khau"><i class="fas fa-key"></i> Đổi mật khẩu</a></li>
+                    {% if role == 'admin' %}
+                    <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                    <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
@@ -99,7 +122,6 @@
 let quyetDinhs = [];
 let selectedIds = [];
 
-// Tải danh sách quyết định từ API
 $.get('/api/quyet_dinh', function(data) {
     quyetDinhs = data;
     renderList();
@@ -143,7 +165,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Sự kiện so sánh
 $('#btnSoSanh').click(() => {
     if (selectedIds.length < 2) {
         alert('Vui lòng chọn ít nhất 2 quyết định để so sánh!');
@@ -160,12 +181,9 @@ $('#btnSoSanh').click(() => {
                 <span class="ms-3 legend-box" style="background:#fff3cd;"></span> Quyết định sửa đổi
                 <span class="ms-3 legend-box" style="background:#cce5ff;"></span> Quyết định thay thế
                 <span class="ms-3 legend-box" style="background:#f8d7da;"></span> Quyết định bãi bỏ
-                <span class="ms-3 legend-box" style="background:#d4fcbc;"></span> Nội dung thêm mới
-                <span class="ms-3 legend-box" style="background:#fbb6b6;"></span> Nội dung bị xóa
             </div>
         `;
         
-        // Danh sách quyết định được chọn
         html += `<h5><i class="fas fa-file-alt"></i> Các quyết định được chọn:</h5><div class="row mb-3">`;
         data.quyet_dinhs.forEach(qd => {
             let bgClass = '';
@@ -184,7 +202,6 @@ $('#btnSoSanh').click(() => {
         });
         html += `</div>`;
         
-        // Danh sách TTHC theo từng quyết định
         html += `<h5 class="mt-3"><i class="fas fa-list-alt"></i> Danh sách TTHC theo từng quyết định:</h5>`;
         let hasTTHC = false;
         for (const [qdId, tthcs] of Object.entries(data.tthc_theo_qd)) {
@@ -205,7 +222,7 @@ $('#btnSoSanh').click(() => {
                         <div class="card-body">
                             <table class="table table-sm table-bordered">
                                 <thead class="table-light">
-                                    <tr><th>Mã TTHC</th><th>Tên TTHC</th><th>Cấp thực hiện</th><th>Trạng thái</th></tr>
+                                    <tr><th>Mã TTHC</th><th>Tên TTHC</th><th>Cấp thực hiện</th><th>Trạng thái</th></td>
                                 </thead>
                                 <tbody>
                                     ${tthcs.map(t => `<tr><td><strong>${escapeHtml(t[0])}</strong></td><td>${escapeHtml(t[1])}</td><td>${escapeHtml(t[2] || '')}</td><td>${escapeHtml(t[3] || '')}</td></tr>`).join('')}
@@ -218,21 +235,6 @@ $('#btnSoSanh').click(() => {
         }
         if (!hasTTHC) {
             html += `<div class="alert alert-warning">Không có thủ tục nào được liên kết với các quyết định này</div>`;
-        }
-        
-        // So sánh văn bản PDF
-        if (data.so_sanh_van_ban && data.so_sanh_van_ban.length > 0) {
-            html += `<h5 class="mt-3"><i class="fas fa-file-pdf"></i> So sánh nội dung văn bản PDF:</h5>`;
-            data.so_sanh_van_ban.forEach(sv => {
-                html += `
-                    <div class="card mt-2">
-                        <div class="card-header bg-secondary text-white">${escapeHtml(sv.qd1)} ↔ ${escapeHtml(sv.qd2)}</div>
-                        <div class="card-body" style="max-height: 400px; overflow-y: auto; font-size: 12px;">
-                            ${sv.diff_html}
-                        </div>
-                    </div>
-                `;
-            });
         }
         
         $('#ketQua').html(html);
