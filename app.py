@@ -6,19 +6,11 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 from datetime import datetime
 import uuid
 from werkzeug.utils import secure_filename
-import pandas as pd
 import json
 import difflib
 import re
-
-# OCR imports
-try:
-    from PIL import Image
-    import pytesseract
-    from pdf2image import convert_from_path
-    OCR_AVAILABLE = True
-except ImportError:
-    OCR_AVAILABLE = False
+import openpyxl
+from openpyxl import load_workbook
 
 app = Flask(__name__)
 
@@ -30,12 +22,6 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(QUYET_DINH_FOLDER, exist_ok=True)
-
-if OCR_AVAILABLE:
-    try:
-        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-    except:
-        pass
 
 # ==================== HÀM LẤY CƠ QUAN THEO CẤP ====================
 def get_co_quan_by_cap(cap_thuc_hien):
@@ -113,33 +99,33 @@ def init_db():
 
 init_db()
 
-# ==================== HÀM OCR ====================
-def extract_text_from_pdf(filepath):
-    try:
-        import PyPDF2
-        with open(filepath, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            text = ""
-            for page in reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text += page_text + "\n"
-            return text if text.strip() else ""
-    except:
-        return ""
-
-def extract_text_from_image_pdf(filepath):
-    if not OCR_AVAILABLE:
-        return ""
-    try:
-        images = convert_from_path(filepath)
-        text = ""
-        for image in images:
-            image = image.convert('L')
-            text += pytesseract.image_to_string(image, lang='vie+eng') + "\n"
-        return text
-    except:
-        return ""
+# ==================== HÀM ĐỌC EXCEL (KHÔNG DÙNG PANDAS) ====================
+def read_excel_file(filepath):
+    """Đọc file Excel và trả về danh sách các dòng dữ liệu"""
+    wb = load_workbook(filepath, data_only=True)
+    ws = wb.active
+    
+    # Lấy header dòng đầu tiên
+    headers = []
+    for cell in ws[1]:
+        if cell.value:
+            headers.append(str(cell.value).strip())
+        else:
+            headers.append('')
+    
+    # Đọc dữ liệu từ dòng 2 trở đi
+    data = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if row and any(cell for cell in row):
+            row_dict = {}
+            for i, header in enumerate(headers):
+                if i < len(row) and row[i] is not None:
+                    row_dict[header] = str(row[i]).strip()
+                else:
+                    row_dict[header] = ''
+            data.append(row_dict)
+    
+    return data, headers
 
 # ==================== TRANG CHỦ ====================
 @app.route('/')
@@ -201,20 +187,6 @@ def dashboard():
     
     conn.close()
     
-    print("=" * 50)
-    print("DASHBOARD THỐNG KÊ:")
-    print(f"Cấp Bộ: {thong_ke['cap_bo']}")
-    print(f"Cấp tỉnh: {thong_ke['cap_tinh']}")
-    print(f"Cấp xã: {thong_ke['cap_xa']}")
-    print(f"Dùng chung: {thong_ke['cap_dung_chung']}")
-    print(f"Liên thông: {thong_ke['cap_lien_thong']}")
-    print(f"Toàn trình: {thong_ke['trang_thai_toan_trinh']}")
-    print(f"Một phần: {thong_ke['trang_thai_cong_khai_mot_phan']}")
-    print(f"Cung cấp TT: {thong_ke['trang_thai_chua_cong_khai']}")
-    print(f"Đã công bố: {thong_ke['so_da_cong_bo']}")
-    print(f"Bãi bỏ: {thong_ke['so_bai_bo']}")
-    print("=" * 50)
-    
     return render_template('dashboard.html', thong_ke=thong_ke)
 
 # ==================== API JSON ====================
@@ -242,30 +214,35 @@ def tai_file_mau():
     from flask import send_file
     
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        mau_data = pd.DataFrame({
-            'STT': [1, 2, 3, 4, 5],
-            'MÃ TTHC': ['TTHC001', 'TTHC002', 'TTHC003', 'TTHC004', 'TTHC005'],
-            'Tên TTHC': ['Đăng ký kinh doanh', 'Chứng thực bản sao', 'Cấp giấy phép xây dựng', 'Bổ nhiệm công chứng viên', 'Đăng ký hộ tịch'],
-            'Lĩnh vực': ['Kinh doanh', 'Hộ tịch', 'Xây dựng', 'Công chứng', 'Hộ tịch'],
-            'Phí': ['X', '', 'X', 'X', ''],
-            'Lệ Phí': ['', 'X', '', '', 'X'],
-            'Cấp thực hiện': ['tinh', 'xa', 'lien_thong', 'bo', 'xa'],
-            'Cơ quan thực hiện': ['Sở Kế hoạch Đầu tư', 'UBND cấp xã', 'UBND cấp xã, Sở Tư pháp', 'Bộ Tư pháp', 'UBND cấp xã'],
-            'Cùng cấp': ['X', '', '', '', ''],
-            '02 cấp': ['', 'X', '', '', ''],
-            'Phi địa giới': ['', '', 'X', '', ''],
-            'Toàn trình': ['X', '', '', 'X', ''],
-            'Một phần': ['', 'X', '', '', 'X'],
-            'Cung cấp thông tin': ['', '', 'X', '', ''],
-            'Dịch vụ BCCI': ['Có', '', 'Không', 'Có', ''],
-            'Quyết định số': ['123/QĐ-UBND', '456/QĐ-UBND', '789/QĐ-UBND', '111/QĐ-BTP', '222/QĐ-UBND'],
-            'TRẠNG THÁI': ['Đã công bố', 'Đã công bố', 'Đã công bố', 'Bãi bỏ', 'Đã công bố'],
-            'Ghi chú': ['Áp dụng từ 01/2024', 'Có phí công chứng', 'Liên thông 3 cấp', 'Theo Nghị định mới', '']
-        })
-        mau_data.to_excel(writer, sheet_name='Sheet1', index=False)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
     
+    # Tạo header
+    headers = ['STT', 'MÃ TTHC', 'Tên TTHC', 'Lĩnh vực', 'Phí', 'Lệ Phí', 
+               'Cấp thực hiện', 'Cơ quan thực hiện', 'Cùng cấp', '02 cấp', 
+               'Phi địa giới', 'Toàn trình', 'Một phần', 'Cung cấp thông tin', 
+               'Dịch vụ BCCI', 'Quyết định số', 'TRẠNG THÁI', 'Ghi chú']
+    
+    for col_idx, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col_idx, value=header)
+    
+    # Dữ liệu mẫu
+    mau_data = [
+        [1, 'TTHC001', 'Đăng ký kinh doanh', 'Kinh doanh', 'X', '', 'tinh', 'Sở Kế hoạch Đầu tư', 'X', '', '', 'X', '', '', 'Có', '123/QĐ-UBND', 'Đã công bố', 'Áp dụng từ 01/2024'],
+        [2, 'TTHC002', 'Chứng thực bản sao', 'Hộ tịch', '', 'X', 'xa', 'UBND cấp xã', '', 'X', '', '', 'X', '', '', '456/QĐ-UBND', 'Đã công bố', 'Có phí công chứng'],
+        [3, 'TTHC003', 'Cấp giấy phép xây dựng', 'Xây dựng', 'X', 'X', 'lien_thong', 'UBND cấp xã, Sở Tư pháp', '', '', 'X', 'X', '', '', '', '789/QĐ-UBND', 'Đã công bố', 'Liên thông 3 cấp'],
+        [4, 'TTHC004', 'Bổ nhiệm công chứng viên', 'Công chứng', 'X', '', 'bo', 'Bộ Tư pháp', '', '', '', 'X', '', '', 'Có', '111/QĐ-BTP', 'Bãi bỏ', 'Theo Nghị định mới'],
+        [5, 'TTHC005', 'Đăng ký hộ tịch', 'Hộ tịch', '', 'X', 'xa', 'UBND cấp xã', '', '', '', '', 'X', '', '', '222/QĐ-UBND', 'Đã công bố', '']
+    ]
+    
+    for row_idx, row_data in enumerate(mau_data, 2):
+        for col_idx, value in enumerate(row_data, 1):
+            ws.cell(row=row_idx, column=col_idx, value=value)
+    
+    wb.save(output)
     output.seek(0)
+    
     return send_file(
         output,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -354,10 +331,10 @@ def them_tthc():
             
             conn.commit()
             conn.close()
-            return '<script>alert("✅ THEM THANH CONG!"); window.location.href="/tthc";</script>'
+            return '<script>alert("✅ THÊM THÀNH CÔNG!"); window.location.href="/tthc";</script>'
         except Exception as e:
             conn.close()
-            return f'<script>alert("❌ LOI: {str(e)}"); window.history.back();</script>'
+            return f'<script>alert("❌ LỖI: {str(e)}"); window.history.back();</script>'
     
     conn = sqlite3.connect('tthc.db')
     c = conn.cursor()
@@ -372,7 +349,8 @@ def import_excel_file(file):
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
-        df = pd.read_excel(filepath, header=0)
+        # Đọc file Excel bằng openpyxl
+        data, headers = read_excel_file(filepath)
         conn = sqlite3.connect('tthc.db')
         c = conn.cursor()
         
@@ -386,49 +364,43 @@ def import_excel_file(file):
         danh_sach_loi = []
         danh_sach_thanh_cong = []
         
-        for idx, row in df.iterrows():
+        for idx, row in enumerate(data, start=2):
             try:
-                ma_tthc = str(row.get('MÃ TTHC', '')).strip() if pd.notna(row.get('MÃ TTHC')) else ''
-                ten_tthc = str(row.get('Tên TTHC', '')).strip() if pd.notna(row.get('Tên TTHC')) else ''
+                ma_tthc = row.get('MÃ TTHC', '').strip()
+                ten_tthc = row.get('Tên TTHC', '').strip()
                 
-                if not ma_tthc or ma_tthc == 'nan' or ma_tthc == '':
-                    danh_sach_loi.append(f"Dong {idx+2}: Thieu MA TTHC")
+                if not ma_tthc or ma_tthc == 'None' or ma_tthc == '':
+                    danh_sach_loi.append(f"Dòng {idx}: Thiếu MÃ TTHC")
                     continue
                 
-                linh_vuc = str(row.get('Lĩnh vực', '')) if pd.notna(row.get('Lĩnh vực')) else ''
-                phi = 'X' if pd.notna(row.get('Phí')) and str(row.get('Phí')).upper() == 'X' else ''
-                le_phi = 'X' if pd.notna(row.get('Lệ Phí')) and str(row.get('Lệ Phí')).upper() == 'X' else ''
-                cap_thuc_hien = str(row.get('Cấp thực hiện', '')) if pd.notna(row.get('Cấp thực hiện')) else ''
-                co_quan = str(row.get('Cơ quan thực hiện', '')) if pd.notna(row.get('Cơ quan thực hiện')) else ''
-                lien_thong_cung_cap = 'X' if pd.notna(row.get('Cùng cấp')) and str(row.get('Cùng cấp')).upper() == 'X' else ''
-                lien_thong_02_cap = 'X' if pd.notna(row.get('02 cấp')) and str(row.get('02 cấp')).upper() == 'X' else ''
-                phi_dia_gioi = 'X' if pd.notna(row.get('Phi địa giới')) and str(row.get('Phi địa giới')).upper() == 'X' else ''
-                dvc_toan_trinh = 'X' if pd.notna(row.get('Toàn trình')) and str(row.get('Toàn trình')).upper() == 'X' else ''
-                dvc_mot_phan = 'X' if pd.notna(row.get('Một phần')) and str(row.get('Một phần')).upper() == 'X' else ''
-                dvc_cung_cap_tt = 'X' if pd.notna(row.get('Cung cấp thông tin')) and str(row.get('Cung cấp thông tin')).upper() == 'X' else ''
-                dich_vu_bcci = str(row.get('Dịch vụ BCCI', '')) if pd.notna(row.get('Dịch vụ BCCI')) else ''
-                so_qd = str(row.get('Quyết định số', '')) if pd.notna(row.get('Quyết định số')) else ''
-                ghi_chu = str(row.get('Ghi chú', '')) if pd.notna(row.get('Ghi chú')) else ''
+                linh_vuc = row.get('Lĩnh vực', '').strip()
+                phi = 'X' if row.get('Phí', '').upper() == 'X' else ''
+                le_phi = 'X' if row.get('Lệ Phí', '').upper() == 'X' else ''
+                cap_thuc_hien = row.get('Cấp thực hiện', '').strip()
+                co_quan = row.get('Cơ quan thực hiện', '').strip()
+                lien_thong_cung_cap = 'X' if row.get('Cùng cấp', '').upper() == 'X' else ''
+                lien_thong_02_cap = 'X' if row.get('02 cấp', '').upper() == 'X' else ''
+                phi_dia_gioi = 'X' if row.get('Phi địa giới', '').upper() == 'X' else ''
+                dvc_toan_trinh = 'X' if row.get('Toàn trình', '').upper() == 'X' else ''
+                dvc_mot_phan = 'X' if row.get('Một phần', '').upper() == 'X' else ''
+                dvc_cung_cap_tt = 'X' if row.get('Cung cấp thông tin', '').upper() == 'X' else ''
+                dich_vu_bcci = row.get('Dịch vụ BCCI', '').strip()
+                so_qd = row.get('Quyết định số', '').strip()
+                ghi_chu = row.get('Ghi chú', '').strip()
                 
-                if not so_qd or so_qd == 'nan':
-                    c.execute("SELECT so_quyet_dinh FROM quyet_dinh LIMIT 1")
-                    default_qd = c.fetchone()
-                    if default_qd:
-                        so_qd = default_qd[0]
-                
-                trang_thai_excel = str(row.get('TRẠNG THÁI', '')).strip() if pd.notna(row.get('TRẠNG THÁI')) else ''
+                trang_thai_excel = row.get('TRẠNG THÁI', '').strip()
                 trang_thai_tt = 'bai_bo' if trang_thai_excel == 'Bãi bỏ' else 'da_cong_bo'
                 
-                trang_thai_cong_khai = ''
+                trang_thai_cong_khai_val = ''
                 if dvc_toan_trinh == 'X':
-                    trang_thai_cong_khai = 'toan_trinh'
+                    trang_thai_cong_khai_val = 'toan_trinh'
                 elif dvc_mot_phan == 'X':
-                    trang_thai_cong_khai = 'cong_khai_mot_phan'
+                    trang_thai_cong_khai_val = 'cong_khai_mot_phan'
                 elif dvc_cung_cap_tt == 'X':
-                    trang_thai_cong_khai = 'chua_cong_khai'
+                    trang_thai_cong_khai_val = 'chua_cong_khai'
                 
                 if cap_thuc_hien and cap_thuc_hien not in ['bo', 'tinh', 'xa', 'dung_chung', 'lien_thong', '']:
-                    danh_sach_loi.append(f"Dong {idx+2}: Cap thuc hien '{cap_thuc_hien}' khong hop le")
+                    danh_sach_loi.append(f"Dòng {idx}: Cấp thực hiện '{cap_thuc_hien}' không hợp lệ")
                     continue
                 
                 if not co_quan and cap_thuc_hien:
@@ -448,7 +420,7 @@ def import_excel_file(file):
                         (ten_tthc, linh_vuc, phi, le_phi, 
                          lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
                          dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
-                         dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                         dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai_val, 
                          so_qd, co_quan, trang_thai_tt, ma_tthc))
                 else:
                     c.execute('''INSERT INTO tthc 
@@ -461,14 +433,14 @@ def import_excel_file(file):
                         (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, 
                          lien_thong_cung_cap, lien_thong_02_cap, phi_dia_gioi,
                          dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, 
-                         dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, 
+                         dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai_val, 
                          so_qd, co_quan, trang_thai_tt))
                 
                 so_luong_thanh_cong += 1
                 danh_sach_thanh_cong.append(f"{ma_tthc} - {ten_tthc}")
                 
             except Exception as e:
-                danh_sach_loi.append(f"Dong {idx+2}: {str(e)}")
+                danh_sach_loi.append(f"Dòng {idx}: {str(e)}")
         
         conn.commit()
         conn.close()
@@ -536,10 +508,10 @@ def sua_tthc(id):
             
             conn.commit()
             conn.close()
-            return '<script>alert("✅ CAP NHAT THANH CONG!"); window.location.href="/tthc";</script>'
+            return '<script>alert("✅ CẬP NHẬT THÀNH CÔNG!"); window.location.href="/tthc";</script>'
         except Exception as e:
             conn.close()
-            return f'<script>alert("❌ LOI: {str(e)}"); window.history.back();</script>'
+            return f'<script>alert("❌ LỖI: {str(e)}"); window.history.back();</script>'
     
     c.execute("SELECT * FROM tthc WHERE id=?", (id,))
     tthc = c.fetchone()
@@ -557,7 +529,7 @@ def xoa_tthc(id):
     c.execute("DELETE FROM tthc WHERE id=?", (id,))
     conn.commit()
     conn.close()
-    return '<script>alert("🗑️ Da xoa thu tuc!"); window.location.href="/tthc";</script>'
+    return '<script>alert("🗑️ Đã xóa thủ tục!"); window.location.href="/tthc";</script>'
 
 # ==================== CHI TIẾT TTHC ====================
 @app.route('/tthc/chi_tiet/<int:id>')
@@ -602,19 +574,16 @@ def them_quyet_dinh():
                 filepath = os.path.join(app.config['QUYET_DINH_FOLDER'], unique_name)
                 file.save(filepath)
                 file_dinh_kem = unique_name
-                noi_dung_ocr = extract_text_from_pdf(filepath)
-                if not noi_dung_ocr:
-                    noi_dung_ocr = extract_text_from_image_pdf(filepath)
         
         try:
             c.execute("INSERT INTO quyet_dinh (so_quyet_dinh, ten_quyet_dinh, ngay_ban_hanh, loai, mo_ta, file_dinh_kem, ten_file_goc, noi_dung_ocr) VALUES (?,?,?,?,?,?,?,?)",
                       (so_qd, ten_qd, ngay_bh, loai, mo_ta, file_dinh_kem, ten_file_goc, noi_dung_ocr))
             conn.commit()
             conn.close()
-            return '<script>alert("✅ Them quyet dinh thanh cong!"); window.location.href="/quyet_dinh";</script>'
+            return '<script>alert("✅ Thêm quyết định thành công!"); window.location.href="/quyet_dinh";</script>'
         except Exception as e:
             conn.close()
-            return f'<script>alert("❌ Loi: {str(e)}"); window.history.back();</script>'
+            return f'<script>alert("❌ Lỗi: {str(e)}"); window.history.back();</script>'
     
     return render_template('quyet_dinh_form.html', quyet_dinh=None)
 
@@ -650,19 +619,16 @@ def sua_quyet_dinh(id):
                 filepath = os.path.join(app.config['QUYET_DINH_FOLDER'], unique_name)
                 file.save(filepath)
                 file_dinh_kem = unique_name
-                noi_dung_ocr = extract_text_from_pdf(filepath)
-                if not noi_dung_ocr:
-                    noi_dung_ocr = extract_text_from_image_pdf(filepath)
         
         try:
             c.execute("UPDATE quyet_dinh SET so_quyet_dinh=?, ten_quyet_dinh=?, ngay_ban_hanh=?, loai=?, mo_ta=?, file_dinh_kem=?, ten_file_goc=?, noi_dung_ocr=? WHERE id=?",
                       (so_qd, ten_qd, ngay_bh, loai, mo_ta, file_dinh_kem, ten_file_goc, noi_dung_ocr, id))
             conn.commit()
             conn.close()
-            return '<script>alert("✅ Cap nhat quyet dinh thanh cong!"); window.location.href="/quyet_dinh";</script>'
+            return '<script>alert("✅ Cập nhật quyết định thành công!"); window.location.href="/quyet_dinh";</script>'
         except Exception as e:
             conn.close()
-            return f'<script>alert("❌ Loi: {str(e)}"); window.history.back();</script>'
+            return f'<script>alert("❌ Lỗi: {str(e)}"); window.history.back();</script>'
     
     c.execute("SELECT * FROM quyet_dinh WHERE id=?", (id,))
     quyet_dinh = c.fetchone()
@@ -682,19 +648,19 @@ def xoa_quyet_dinh(id):
     c.execute("DELETE FROM quyet_dinh WHERE id=?", (id,))
     conn.commit()
     conn.close()
-    return '<script>alert("🗑️ Da xoa quyet dinh!"); window.location.href="/quyet_dinh";</script>'
+    return '<script>alert("🗑️ Đã xóa quyết định!"); window.location.href="/quyet_dinh";</script>'
 
 # ==================== XEM PDF ====================
 @app.route('/xem_pdf/<int:id>')
 def xem_pdf(id):
     conn = sqlite3.connect('tthc.db')
     c = conn.cursor()
-    c.execute("SELECT file_dinh_kem, ten_file_goc, noi_dung_ocr FROM quyet_dinh WHERE id=?", (id,))
+    c.execute("SELECT file_dinh_kem, ten_file_goc FROM quyet_dinh WHERE id=?", (id,))
     result = c.fetchone()
     conn.close()
     if result and result[0]:
-        return render_template('xem_pdf.html', file_name=result[0], ten_file=result[1], noi_dung_ocr=result[2], quyet_dinh_id=id)
-    return '<script>alert("Khong co file dinh kem!"); window.history.back();</script>'
+        return render_template('xem_pdf.html', file_name=result[0], ten_file=result[1], quyet_dinh_id=id)
+    return '<script>alert("Không có file đính kèm!"); window.history.back();</script>'
 
 @app.route('/uploads/quyet_dinh/<filename>')
 def download_pdf(filename):
@@ -709,18 +675,17 @@ def so_sanh_qd():
 def api_so_sanh_quyet_dinh():
     qd_ids = request.args.get('qd_ids', '')
     if not qd_ids:
-        return jsonify({'error': 'Chua chon quyet dinh'})
+        return jsonify({'error': 'Chưa chọn quyết định'})
     ids = [int(x) for x in qd_ids.split(',')]
     conn = sqlite3.connect('tthc.db')
     c = conn.cursor()
     quyet_dinhs = []
     noi_dung = {}
     for qd_id in ids:
-        c.execute("SELECT id, so_quyet_dinh, ten_quyet_dinh, ngay_ban_hanh, loai, noi_dung_ocr FROM quyet_dinh WHERE id=?", (qd_id,))
+        c.execute("SELECT id, so_quyet_dinh, ten_quyet_dinh, ngay_ban_hanh, loai FROM quyet_dinh WHERE id=?", (qd_id,))
         qd = c.fetchone()
         if qd:
-            quyet_dinhs.append({'id': qd[0], 'so_quyet_dinh': qd[1], 'ten_quyet_dinh': qd[2], 'ngay_ban_hanh': qd[3], 'loai': qd[4], 'noi_dung': qd[5] or ''})
-            noi_dung[qd_id] = qd[5] or ''
+            quyet_dinhs.append({'id': qd[0], 'so_quyet_dinh': qd[1], 'ten_quyet_dinh': qd[2], 'ngay_ban_hanh': qd[3], 'loai': qd[4], 'noi_dung': ''})
     tthc_theo_qd = {}
     for qd_id in ids:
         qd = next((q for q in quyet_dinhs if q['id'] == qd_id), None)
@@ -728,16 +693,9 @@ def api_so_sanh_quyet_dinh():
             c.execute("SELECT ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc WHERE so_quyet_dinh=?", (qd['so_quyet_dinh'],))
             tthc_theo_qd[qd_id] = c.fetchall()
     conn.close()
-    so_sanh_van_ban = []
-    if len(ids) >= 2:
-        for i in range(len(ids)):
-            for j in range(i+1, len(ids)):
-                if noi_dung.get(ids[i]) and noi_dung.get(ids[j]):
-                    diff = difflib.HtmlDiff(wrapcolumn=80).make_file(noi_dung[ids[i]].splitlines(), noi_dung[ids[j]].splitlines(), fromdesc=f"QĐ {quyet_dinhs[i]['so_quyet_dinh']}", todesc=f"QĐ {quyet_dinhs[j]['so_quyet_dinh']}")
-                    so_sanh_van_ban.append({'qd1': quyet_dinhs[i]['so_quyet_dinh'], 'qd2': quyet_dinhs[j]['so_quyet_dinh'], 'diff_html': diff})
-    return jsonify({'quyet_dinhs': quyet_dinhs, 'tthc_theo_qd': tthc_theo_qd, 'so_sanh_van_ban': so_sanh_van_ban})
+    return jsonify({'quyet_dinhs': quyet_dinhs, 'tthc_theo_qd': tthc_theo_qd, 'so_sanh_van_ban': []})
 
-# ==================== BÁO CÁO THỐNG KÊ NÂNG CAO ====================
+# ==================== BÁO CÁO THỐNG KÊ ====================
 @app.route('/bao_cao')
 def bao_cao():
     conn = sqlite3.connect('tthc.db')
@@ -838,11 +796,9 @@ def api_bao_cao_data():
     c.execute(sql, params)
     data = c.fetchall()
     
-    # Tổng số
     c.execute("SELECT COUNT(*) FROM tthc")
     tong_so = c.fetchone()[0]
     
-    # Thống kê DVC trực tuyến
     c.execute("SELECT COUNT(*) FROM tthc WHERE dvc_toan_trinh = 'X'")
     so_toan_trinh = c.fetchone()[0]
     
@@ -852,14 +808,12 @@ def api_bao_cao_data():
     c.execute("SELECT COUNT(*) FROM tthc WHERE dvc_cung_cap_tt = 'X'")
     so_cung_cap_tt = c.fetchone()[0]
     
-    # Thống kê trạng thái
     c.execute("SELECT COUNT(*) FROM tthc WHERE trang_thai = 'da_cong_bo'")
     so_da_cong_bo = c.fetchone()[0]
     
     c.execute("SELECT COUNT(*) FROM tthc WHERE trang_thai = 'bai_bo'")
     so_bai_bo = c.fetchone()[0]
     
-    # Thống kê Phí, Lệ phí, Miễn thu, BCCI
     c.execute("SELECT COUNT(*) FROM tthc WHERE phi = 'X'")
     so_co_phi = c.fetchone()[0]
     
@@ -911,6 +865,7 @@ def api_bao_cao_data():
 def export_bao_cao_excel():
     import io
     from flask import send_file
+    from openpyxl import Workbook
     
     so_quyet_dinh = request.args.get('so_quyet_dinh', '')
     linh_vuc = request.args.get('linh_vuc', '')
@@ -983,39 +938,43 @@ def export_bao_cao_excel():
     data = c.fetchall()
     conn.close()
     
-    df = pd.DataFrame(data, columns=[
-        'MÃ TTHC', 'TÊN TTHC', 'LĨNH VỰC', 'PHÍ', 'LỆ PHÍ',
-        'CẤP THỰC HIỆN', 'CƠ QUAN THỰC HIỆN', 'TOÀN TRÌNH', 'MỘT PHẦN', 'CUNG CẤP TT',
-        'DỊCH VỤ BCCI', 'GHI CHÚ', 'QUYẾT ĐỊNH SỐ', 'TRẠNG THÁI'
-    ])
+    # Tạo file Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "BaoCaoTTHC"
     
-    df['PHÍ'] = df['PHÍ'].apply(lambda x: 'X' if x == 'X' else '')
-    df['LỆ PHÍ'] = df['LỆ PHÍ'].apply(lambda x: 'X' if x == 'X' else '')
-    df['TOÀN TRÌNH'] = df['TOÀN TRÌNH'].apply(lambda x: 'X' if x == 'X' else '')
-    df['MỘT PHẦN'] = df['MỘT PHẦN'].apply(lambda x: 'X' if x == 'X' else '')
-    df['CUNG CẤP TT'] = df['CUNG CẤP TT'].apply(lambda x: 'X' if x == 'X' else '')
-    df['TRẠNG THÁI'] = df['TRẠNG THÁI'].apply(lambda x: 'Đã công bố' if x == 'da_cong_bo' else 'Bãi bỏ')
+    # Header
+    headers = ['MÃ TTHC', 'TÊN TTHC', 'LĨNH VỰC', 'PHÍ', 'LỆ PHÍ',
+               'CẤP THỰC HIỆN', 'CƠ QUAN THỰC HIỆN', 'TOÀN TRÌNH', 'MỘT PHẦN', 'CUNG CẤP TT',
+               'DỊCH VỤ BCCI', 'GHI CHÚ', 'QUYẾT ĐỊNH SỐ', 'TRẠNG THÁI']
     
+    for col_idx, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col_idx, value=header)
+    
+    # Dữ liệu
     cap_map = {'bo': 'Cấp Bộ', 'tinh': 'Cấp tỉnh', 'xa': 'Cấp xã', 'dung_chung': 'Dùng chung', 'lien_thong': 'Liên thông'}
-    df['CẤP THỰC HIỆN'] = df['CẤP THỰC HIỆN'].apply(lambda x: cap_map.get(x, x))
+    
+    for row_idx, row in enumerate(data, 2):
+        ws.cell(row=row_idx, column=1, value=row[0])
+        ws.cell(row=row_idx, column=2, value=row[1])
+        ws.cell(row=row_idx, column=3, value=row[2] or '')
+        ws.cell(row=row_idx, column=4, value='X' if row[3] == 'X' else '')
+        ws.cell(row=row_idx, column=5, value='X' if row[4] == 'X' else '')
+        ws.cell(row=row_idx, column=6, value=cap_map.get(row[5], row[5]))
+        ws.cell(row=row_idx, column=7, value=row[6] or '')
+        ws.cell(row=row_idx, column=8, value='X' if row[7] == 'X' else '')
+        ws.cell(row=row_idx, column=9, value='X' if row[8] == 'X' else '')
+        ws.cell(row=row_idx, column=10, value='X' if row[9] == 'X' else '')
+        ws.cell(row=row_idx, column=11, value=row[10] or '')
+        ws.cell(row=row_idx, column=12, value=row[11] or '')
+        ws.cell(row=row_idx, column=13, value=row[12] or '')
+        trang_thai_val = 'Đã công bố' if row[13] == 'da_cong_bo' else 'Bãi bỏ'
+        ws.cell(row=row_idx, column=14, value=trang_thai_val)
     
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='BaoCaoTTHC', index=False)
-        worksheet = writer.sheets['BaoCaoTTHC']
-        for column in worksheet.columns:
-            max_length = 0
-            column_letter = column[0].column_letter
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)
-            worksheet.column_dimensions[column_letter].width = adjusted_width
-    
+    wb.save(output)
     output.seek(0)
+    
     ten_file = f'BaoCao_TTHC_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
     return send_file(
         output,
@@ -1038,29 +997,5 @@ def tim_kiem():
     conn.close()
     return render_template('tim_kiem.html', ket_qua=ket_qua, tu_khoa=tu_khoa)
 
-@app.route('/api/tim_kiem')
-def api_tim_kiem():
-    tu_khoa = request.args.get('q', '')
-    conn = sqlite3.connect('tthc.db')
-    c = conn.cursor()
-    if tu_khoa:
-        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc WHERE ten_tthc LIKE ? OR ma_tthc LIKE ?", (f'%{tu_khoa}%', f'%{tu_khoa}%'))
-    else:
-        c.execute("SELECT id, ma_tthc, ten_tthc, cap_thuc_hien, trang_thai_cong_khai, trang_thai FROM tthc LIMIT 20")
-    data = c.fetchall()
-    conn.close()
-    
-    ket_qua = []
-    for row in data:
-        ket_qua.append({
-            'id': row[0],
-            'ma_tthc': row[1],
-            'ten_tthc': row[2],
-            'cap_thuc_hien': row[3],
-            'trang_thai_cong_khai': row[4],
-            'trang_thai': row[5]
-        })
-    
-    return jsonify({'data': ket_qua})
 if __name__ == '__main__':
     app.run(debug=True)
