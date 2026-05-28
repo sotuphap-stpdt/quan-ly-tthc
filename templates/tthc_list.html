@@ -4,6 +4,9 @@
     <title>Danh sách Thủ tục hành chính - HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
@@ -23,7 +26,7 @@
         .pagination .disabled .page-link { cursor: not-allowed; opacity: 0.6; }
         .page-size-select { width: auto; display: inline-block; }
         .control-bar { background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; }
-        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; }
+        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
         .footer .footer-info { text-align: center; }
         .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
         .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
@@ -44,6 +47,9 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
                         <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
+                        {% if role == 'admin' %}
+                        <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                        {% endif %}
                     </ul>
                 </li>
                 <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
@@ -53,6 +59,10 @@
                 <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
             </ul>
         </div>
+        <div class="ms-auto">
+            <span class="text-white me-3"><i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}</span>
+            <a href="/logout" class="btn btn-outline-light btn-sm"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+        </div>
     </div>
 </nav>
 
@@ -61,7 +71,6 @@
         <h2><i class="fas fa-list"></i> Danh sách Thủ tục hành chính</h2>
         <a href="/tthc/them" class="btn btn-success mb-3"><i class="fas fa-plus"></i> Thêm mới TTHC</a>
         
-        <!-- Thanh điều khiển -->
         <div class="control-bar">
             <div class="row align-items-center">
                 <div class="col-md-3">
@@ -85,7 +94,7 @@
         </div>
         
         <div class="table-responsive">
-            <table class="table table-bordered table-striped">
+            <table class="table table-bordered table-striped" id="tthcTable">
                 <thead class="table-dark">
                     <tr>
                         <th style="width: 50px;">STT</th>
@@ -111,16 +120,17 @@
                 </thead>
                 <tbody id="tableBody">
                     <tr><td colspan="19" class="text-center">Đang tải dữ liệu...<\/td><\/tr>
-                </tbody>
-            </table>
-        </div>
+                <\/tbody>
+            <\/table>
+        <\/div>
         
-        <!-- Phân trang dưới cùng -->
         <div class="row mt-3">
             <div class="col-md-12 text-center">
                 <div id="paginationControlsBottom"></div>
             </div>
         </div>
+        
+        <a href="/" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left"></i> Về Dashboard</a>
     </div>
 </div>
 
@@ -138,7 +148,6 @@
 </footer>
 
 <script>
-// Dữ liệu từ server
 const tthcsData = {{ tthcs | tojson | safe }};
 
 let allData = [];
@@ -182,7 +191,7 @@ function renderRow(item, idx) {
 
 function renderTable() {
     if (!allData || allData.length === 0) {
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="19" class="text-center">Chưa có dữ liệu thủ tục hành chính<\/td><\/tr>';
+        document.getElementById('tableBody').innerHTML = '<td><td colspan="19" class="text-center">Chưa có dữ liệu thủ tục hành chính<\/td><\/tr>';
         document.getElementById('paginationInfo').innerHTML = '';
         document.getElementById('paginationControls').innerHTML = '';
         document.getElementById('paginationControlsBottom').innerHTML = '';
@@ -197,7 +206,7 @@ function renderTable() {
             html += renderRow(allData[i], i);
         }
         document.getElementById('tableBody').innerHTML = html;
-        document.getElementById('paginationInfo').innerHTML = `Hiển thị ${totalItems} trên tổng số ${totalItems} dòng`;
+        document.getElementById('paginationInfo').innerHTML = 'Hiển thị ' + totalItems + ' trên tổng số ' + totalItems + ' dòng';
         document.getElementById('paginationControls').innerHTML = '';
         document.getElementById('paginationControlsBottom').innerHTML = '';
         return;
@@ -217,14 +226,14 @@ function renderTable() {
         html += renderRow(pageData[i], globalIdx);
     }
     document.getElementById('tableBody').innerHTML = html;
-    document.getElementById('paginationInfo').innerHTML = `Hiển thị ${start + 1} - ${end} trên tổng số ${totalItems} dòng`;
+    document.getElementById('paginationInfo').innerHTML = 'Hiển thị ' + (start + 1) + ' - ' + end + ' trên tổng số ' + totalItems + ' dòng';
     
     renderPagination();
 }
 
 function renderPagination() {
     if (totalPages <= 1) {
-        const emptyHtml = '<nav><ul class="pagination"><li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li></ul></nav>';
+        var emptyHtml = '<nav><ul class="pagination"><li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li></ul></nav>';
         document.getElementById('paginationControls').innerHTML = emptyHtml;
         document.getElementById('paginationControlsBottom').innerHTML = emptyHtml;
         return;
@@ -243,30 +252,26 @@ function renderPagination() {
     
     let pageNumbers = '';
     for (let i = startPage; i <= endPage; i++) {
-        pageNumbers += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(${i})">${i}</a>
-                        </li>`;
+        pageNumbers += '<li class="page-item ' + (i === currentPage ? 'active' : '') + '">' +
+                            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + i + ')">' + i + '</a>' +
+                        '</li>';
     }
     
-    const paginationHtml = `
-        <nav>
-            <ul class="pagination">
-                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">« Đầu</a>
-                </li>
-                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(${currentPage - 1})">‹ Trước</a>
-                </li>
-                ${pageNumbers}
-                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(${currentPage + 1})">Sau ›</a>
-                </li>
-                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(${totalPages})">Cuối »</a>
-                </li>
-            </ul>
-        </nav>
-    `;
+    var paginationHtml = '<nav><ul class="pagination">' +
+        '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">« Đầu</a>' +
+        '</li>' +
+        '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + (currentPage - 1) + ')">‹ Trước</a>' +
+        '</li>' +
+        pageNumbers +
+        '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + (currentPage + 1) + ')">Sau ›</a>' +
+        '</li>' +
+        '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + totalPages + ')">Cuối »</a>' +
+        '</li>' +
+        '</ul></nav>';
     
     document.getElementById('paginationControls').innerHTML = paginationHtml;
     document.getElementById('paginationControlsBottom').innerHTML = paginationHtml;
@@ -281,6 +286,7 @@ function goToPage(page) {
 
 function changePageSize() {
     var select = document.getElementById('pageSizeSelect');
+    if (!select) return;
     var value = select.value;
     
     if (value === 'all') {
@@ -299,20 +305,18 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Khởi tạo
 allData = tthcsData;
+if (allData && allData.length > 0) {
+    renderTable();
+} else {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="19" class="text-center">Chưa có dữ liệu thủ tục hành chính<\/td><\/tr>';
+}
 
 var pageSizeSelect = document.getElementById('pageSizeSelect');
 if (pageSizeSelect) {
     pageSizeSelect.onchange = function() {
         changePageSize();
     };
-}
-
-if (allData && allData.length > 0) {
-    renderTable();
-} else {
-    document.getElementById('tableBody').innerHTML = '<td><td colspan="19" class="text-center">Chưa có dữ liệu thủ tục hành chính<\/td><\/tr>';
 }
 </script>
 </body>
