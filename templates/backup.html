@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quản lý sao lưu - HỆ THỐNG TTHC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+        .main-content { flex: 1; }
+        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
+        .footer .footer-info { text-align: center; }
+        .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
+        .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
+        .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</a>
+        <div class="ms-auto">
+            <div class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/doi_mat_khau"><i class="fas fa-key"></i> Đổi mật khẩu</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="main-content">
+    <div class="container mt-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3><i class="fas fa-database"></i> Quản lý sao lưu dữ liệu</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> <strong>Hướng dẫn:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Tạo sao lưu:</strong> Tạo bản sao lưu dữ liệu hiện tại</li>
+                        <li><strong>Khôi phục:</strong> Chọn một bản sao lưu để khôi phục (dữ liệu hiện tại sẽ bị thay thế)</li>
+                        <li><strong>Tải xuống:</strong> Tải bản sao lưu về máy tính</li>
+                        <li><strong>Xóa:</strong> Xóa bản sao lưu không cần thiết</li>
+                    </ul>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <a href="/backup/create" class="btn btn-success btn-lg" onclick="return confirm('Tạo bản sao lưu mới?')">
+                        <i class="fas fa-plus-circle"></i> Tạo sao lưu mới
+                    </a>
+                    <a href="/" class="btn btn-secondary btn-lg">Về Dashboard</a>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="backupTable" class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Tên file</th>
+                                <th>Ngày tạo</th>
+                                <th>Kích thước</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups %}
+                            <tr>
+                                <td><code>{{ backup.name }}</code></td>
+                                <td>{{ backup.date }}</td>
+                                <td>{{ (backup.size / 1024)|round(1) }} KB</td>
+                                <td>
+                                    <a href="/backup/restore/{{ backup.name }}" class="btn btn-sm btn-warning" onclick="return confirm('Khôi phục dữ liệu từ bản sao lưu này? Dữ liệu hiện tại sẽ bị thay thế!')">
+                                        <i class="fas fa-undo-alt"></i> Khôi phục
+                                    </a>
+                                    <a href="/backup/download/{{ backup.name }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-download"></i> Tải xuống
+                                    </a>
+                                    <a href="/backup/delete/{{ backup.name }}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa bản sao lưu này?')">
+                                        <i class="fas fa-trash"></i> Xóa
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center">Chưa có bản sao lưu nào</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-info">
+            <p><i class="fas fa-building"></i> <strong>Sở Tư pháp tỉnh Đồng Tháp</strong></p>
+            <p><i class="fas fa-map-marker-alt"></i> 381 Hùng Vương, phường Đạo Thạnh, tỉnh Đồng Tháp</p>
+            <p><i class="fas fa-phone-alt"></i> 085 3993 892 &nbsp;&nbsp;|&nbsp;&nbsp; <i class="fas fa-envelope"></i> stp@dongthap.gov.vn</p>
+        </div>
+        <div class="copyright">
+            <p>© 2026 Hệ thống quản lý Thủ tục hành chính Sở Tư pháp tỉnh Đồng Tháp. Phiên bản 1.0</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+$(document).ready(function() {
+    $('#backupTable').DataTable({
+        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/vi.json" },
+        pageLength: 10,
+        order: [[1, 'desc']]
+    });
+});
+</script>
+</body>
+</html>
