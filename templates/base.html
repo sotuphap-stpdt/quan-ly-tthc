@@ -1,102 +1,319 @@
+<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}QL TTHC - Sở Tư pháp Đồng Tháp{% endblock %}</title>
+    <title>{% block title %}QL TTHC Sở Tư pháp Đồng Tháp{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #0d5c2a 0%, #0a4a22 100%);
+            min-height: calc(100vh - 70px);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.85);
+            border-radius: 12px;
+            margin: 4px 12px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            box-shadow: 0 4px 15px rgba(243,156,18,0.3);
+        }
+        .sidebar .nav-link i {
+            width: 28px;
+            margin-right: 8px;
+        }
+        .card-modern {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .card-modern:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+        }
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
+            border: none;
+            color: white;
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30,142,62,0.3);
+            color: white;
+        }
+        .btn-gradient-orange {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        footer {
+            background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+            color: rgba(255,255,255,0.85);
+            margin-top: auto;
+            padding: 2rem 0 1rem;
+        }
+        footer a {
+            color: #f39c12;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        footer a:hover {
+            color: #e67e22;
+            text-decoration: underline;
+        }
+        .table-modern {
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .table-modern thead {
+            background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
+            color: white;
+        }
+        .alert-custom {
+            border-radius: 16px;
+            border: none;
+        }
+        .breadcrumb-custom {
+            background: transparent;
+            padding: 0;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        .footer-brand {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h3><i class="fas fa-file-alt"></i> TTHC Đồng Tháp</h3>
-            <p>Sở Tư pháp</p>
-        </div>
-        
-        {% if session.user_id %}
-        <div class="nav-section">
-            <div class="nav-title">TRANG CHÍNH</div>
-            <a href="/" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        </div>
-        
-        <div class="nav-section">
-            <div class="nav-title">QUẢN LÝ TTHC</div>
-            <a href="/tthc" class="nav-link"><i class="fas fa-list"></i> Danh sách TTHC</a>
-            {% if session.role == 'admin' or session.quyen_them_tthc %}
-            <a href="/tthc/them" class="nav-link"><i class="fas fa-plus-circle"></i> Thêm TTHC</a>
-            {% endif %}
-            {% if session.role == 'admin' %}
-            <a href="/import-excel" class="nav-link"><i class="fas fa-file-excel"></i> Import Excel</a>
-            {% endif %}
-        </div>
-        
-        <div class="nav-section">
-            <div class="nav-title">QUẢN LÝ QUYẾT ĐỊNH</div>
-            <a href="/quyet_dinh" class="nav-link"><i class="fas fa-gavel"></i> Danh sách QĐ</a>
-            {% if session.role == 'admin' or session.quyen_them_qd %}
-            <a href="/quyet_dinh/them" class="nav-link"><i class="fas fa-plus-circle"></i> Thêm QĐ</a>
-            {% endif %}
-            <a href="/so_sanh_quyet_dinh" class="nav-link"><i class="fas fa-code-branch"></i> So sánh QĐ</a>
-        </div>
-        
-        <div class="nav-section">
-            <div class="nav-title">BÁO CÁO & TRA CỨU</div>
-            <a href="/bao_cao" class="nav-link"><i class="fas fa-chart-bar"></i> Báo cáo</a>
-            <a href="/tim_kiem" class="nav-link"><i class="fas fa-search"></i> Tìm kiếm</a>
-        </div>
-        
-        {% if session.role == 'admin' %}
-        <div class="nav-section">
-            <div class="nav-title">QUẢN TRỊ</div>
-            <a href="/users" class="nav-link"><i class="fas fa-users"></i> Người dùng</a>
-            <a href="/phan_quyen" class="nav-link"><i class="fas fa-lock"></i> Phân quyền</a>
-            <a href="/backup" class="nav-link"><i class="fas fa-database"></i> Sao lưu</a>
-        </div>
-        {% endif %}
-        
-        <div class="nav-section">
-            <div class="nav-title">CÀI ĐẶT</div>
-            <a href="/doi_mat_khau" class="nav-link"><i class="fas fa-key"></i> Đổi mật khẩu</a>
-            <a href="/logout" class="nav-link"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
-        </div>
-        {% endif %}
-    </div>
-    
-    <div class="content">
-        <div class="top-navbar">
-            <button class="btn btn-light menu-toggle d-md-none" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-gavel me-2" style="color: #1e8e3e;"></i>
+                TTHC Đồng Tháp
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
             </button>
-            {% if session.user_id %}
-            <div class="user-info">
-                <div class="user-avatar">{{ session.fullname[0]|upper if session.fullname else session.username[0]|upper }}</div>
-                <span>{{ session.fullname or session.username }}</span>
-                {% if session.role == 'admin' %}
-                <span class="badge bg-danger">Admin</span>
-                {% endif %}
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                            <div class="avatar me-2">
+                                {{ session.get('fullname', 'U')|first|upper }}
+                            </div>
+                            <span class="fw-semibold">{{ session.get('fullname', session.get('username', 'User')) }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-4">
+                            <li><a class="dropdown-item" href="{{ url_for('doi_mat_khau') }}"><i class="fas fa-key me-2"></i>Đổi mật khẩu</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
-            {% endif %}
         </div>
-        
-        <div class="main-content">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message|safe }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
-            {% block content %}{% endblock %}
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-2 d-md-block sidebar p-0">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i> Tổng quan
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint in ['tthc_list', 'tthc_create', 'tthc_edit'] %}active{% endif %}" href="{{ url_for('tthc_list') }}">
+                                <i class="fas fa-folder-open"></i> TTHC
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint in ['quyet_dinh_list', 'quyet_dinh_create'] %}active{% endif %}" href="{{ url_for('quyet_dinh_list') }}">
+                                <i class="fas fa-file-alt"></i> Quyết định
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'so_sanh_page' %}active{% endif %}" href="{{ url_for('so_sanh_page') }}">
+                                <i class="fas fa-code-branch"></i> So sánh QĐ
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'tim_kiem' %}active{% endif %}" href="{{ url_for('tim_kiem') }}">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </a>
+                        </li>
+                        {% if session.get('quyen_bao_cao') or session.get('role') == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'bao_cao' %}active{% endif %}" href="{{ url_for('bao_cao') }}">
+                                <i class="fas fa-chart-bar"></i> Báo cáo
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if session.get('role') == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'danh_sach_users' %}active{% endif %}" href="{{ url_for('danh_sach_users') }}">
+                                <i class="fas fa-users"></i> Người dùng
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'phan_quyen' %}active{% endif %}" href="{{ url_for('phan_quyen') }}">
+                                <i class="fas fa-lock"></i> Phân quyền
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'backup_list' %}active{% endif %}" href="{{ url_for('backup_list') }}">
+                                <i class="fas fa-database"></i> Sao lưu
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'import_excel_page' %}active{% endif %}" href="{{ url_for('import_excel_page') }}">
+                                <i class="fas fa-file-excel"></i> Import Excel
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-10 ms-sm-auto px-md-4 py-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show shadow-sm rounded-4 border-0" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="fade-in">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
         </div>
     </div>
-    
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-5 mb-3">
+                    <div class="footer-brand mb-2">
+                        <i class="fas fa-gavel me-2"></i>SỞ TƯ PHÁP TỈNH ĐỒNG THÁP
+                    </div>
+                    <p class="small">Hệ thống quản lý thủ tục hành chính - Cải cách hành chính hiện đại, minh bạch, hiệu quả.</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ</h6>
+                    <p class="small mb-1">381 Hùng Vương, phường Đạo Thạnh, thành phố Cao Lãnh, tỉnh Đồng Tháp</p>
+                    <h6 class="mt-2"><i class="fas fa-phone-alt me-2"></i>Điện thoại</h6>
+                    <p class="small">085 3993 892</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <h6><i class="fas fa-envelope me-2"></i>Email</h6>
+                    <p class="small">stp@dongthap.gov.vn</p>
+                    <h6><i class="fas fa-globe me-2"></i>Website</h6>
+                    <p class="small">sotuphap.dongthap.gov.vn</p>
+                </div>
+            </div>
+            <hr class="bg-secondary">
+            <div class="text-center small">
+                &copy; 2025 Sở Tư pháp tỉnh Đồng Tháp. Toàn quyền được bảo lưu.
+            </div>
+        </div>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
