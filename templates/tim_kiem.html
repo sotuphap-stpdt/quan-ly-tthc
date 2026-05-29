@@ -1,329 +1,47 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Tra cứu thủ tục hành chính - HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
-        .main-content { flex: 1; }
-        .table-responsive { overflow-x: auto; }
-        .table th { white-space: nowrap; background-color: #343a40; color: white; }
-        .table td { vertical-align: middle; word-wrap: break-word; }
-        .ten-tthc-content { word-break: break-word; white-space: normal; line-height: 1.4; }
-        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
-        .footer .footer-info { text-align: center; }
-        .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
-        .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
-        .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
-        .pagination { margin: 0; flex-wrap: wrap; justify-content: center; }
-        .pagination .page-link { cursor: pointer; margin: 2px; }
-        .pagination .active .page-link { background-color: #007bff; border-color: #007bff; color: white; }
-        .pagination .disabled .page-link { cursor: not-allowed; opacity: 0.6; }
-        .page-size-select { width: auto; display: inline-block; }
-        .control-bar { background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; }
-        .search-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    </style>
-</head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
-    <div class="container">
-        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-plus-circle"></i> Thêm mới</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
-                        <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
-                <li class="nav-item"><a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a></li>
-                <li class="nav-item"><a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a></li>
-                <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
-                <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
+{% extends "base.html" %}
 
-<div class="main-content">
-    <div class="container mt-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h3><i class="fas fa-search"></i> TRA CỨU THỦ TỤC HÀNH CHÍNH</h3>
+{% block title %}Tìm kiếm TTHC{% endblock %}
+
+{% block content %}
+<h2><i class="fas fa-search"></i> Tìm kiếm Thủ tục hành chính</h2>
+
+<div class="card shadow mt-3">
+    <div class="card-body">
+        <form method="POST">
+            <div class="input-group">
+                <input type="text" name="keyword" class="form-control form-control-lg" placeholder="Nhập tên TTHC, mã TTHC hoặc lĩnh vực..." value="{{ keyword }}">
+                <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-search"></i> Tìm kiếm</button>
             </div>
-            <div class="card-body">
-                <!-- Ô tìm kiếm -->
-                <div class="search-box">
-                    <form method="GET" id="searchForm">
-                        <div class="input-group">
-                            <input type="text" name="q" id="searchKeyword" class="form-control form-control-lg" placeholder="Nhập mã TTHC hoặc tên thủ tục cần tìm..." value="{{ tu_khoa }}">
-                            <button class="btn btn-primary btn-lg" type="submit" id="btnSearch">
-                                <i class="fas fa-search"></i> Tìm kiếm
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Thanh điều khiển phân trang -->
-                <div class="control-bar">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <label class="form-label mb-0 me-2"><i class="fas fa-eye"></i> Hiển thị:</label>
-                            <select id="pageSizeSelect" class="form-select page-size-select" style="width: 100px; display: inline-block;">
-                                <option value="5">5 dòng</option>
-                                <option value="10" selected>10 dòng</option>
-                                <option value="20">20 dòng</option>
-                                <option value="50">50 dòng</option>
-                                <option value="100">100 dòng</option>
-                                <option value="all">Tất cả</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 text-center">
-                            <div id="paginationControls"></div>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <span id="paginationInfo" class="text-muted"></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Bảng kết quả -->
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped" id="resultTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width:50px">STT</th>
-                                <th style="width:130px">MÃ TTHC</th>
-                                <th style="min-width:350px">TÊN THỦ TỤC HÀNH CHÍNH</th>
-                                <th style="width:120px">CẤP THỰC HIỆN</th>
-                                <th style="width:150px">TRẠNG THÁI</th>
-                                <th style="width:100px">THAO TÁC</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Phân trang dưới cùng -->
-                <div class="row mt-3">
-                    <div class="col-md-12 text-center">
-                        <div id="paginationControlsBottom"></div>
-                    </div>
-                </div>
-                
-                <a href="/" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left"></i> Về Dashboard</a>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
 
-<footer class="footer">
-    <div class="container">
-        <div class="footer-info">
-            <p><i class="fas fa-building"></i> <strong>Sở Tư pháp tỉnh Đồng Tháp</strong></p>
-            <p><i class="fas fa-map-marker-alt"></i> 381 Hùng Vương, phường Đạo Thạnh, tỉnh Đồng Tháp</p>
-            <p><i class="fas fa-phone-alt"></i> 085 3993 892 &nbsp;&nbsp;|&nbsp;&nbsp; <i class="fas fa-envelope"></i> stp@dongthap.gov.vn</p>
-        </div>
-        <div class="copyright">
-            <p>© 2026 Hệ thống quản lý Thủ tục hành chính Sở Tư pháp tỉnh Đồng Tháp. Phiên bản 1.0</p>
-        </div>
+{% if results %}
+<div class="card shadow mt-4">
+    <div class="card-header bg-primary text-white">
+        <i class="fas fa-list"></i> Kết quả tìm kiếm ({{ results|length }})
     </div>
-</footer>
-
-<script>
-// Dữ liệu từ server (Flask truyền vào)
-var ketQuaData = {{ ket_qua | tojson | safe }};
-
-let allData = [];
-let currentPage = 1;
-let pageSize = 10;
-let totalPages = 1;
-
-// Hàm render một dòng
-function renderRow(item, idx) {
-    const capMap = {'bo':'Cấp Bộ','tinh':'Cấp tỉnh','xa':'Cấp xã','dung_chung':'Dùng chung','lien_thong':'Liên thông'};
-    const capText = capMap[item[3]] || item[3] || '';
-    const trangthaiMap = {'toan_trinh':'Toàn trình','cong_khai_mot_phan':'Một phần','chua_cong_khai':'Chưa công khai'};
-    const trangthaiText = trangthaiMap[item[4]] || item[4] || '';
-    
-    return '<tr>' +
-        '<td class="text-center">' + (idx + 1) + '</td>' +
-        '<td><strong>' + escapeHtml(item[1]) + '</strong></td>' +
-        '<td class="ten-tthc-content">' + escapeHtml(item[2]) + '</td>' +
-        '<td>' + capText + '</td>' +
-        '<td>' + trangthaiText + '</td>' +
-        '<td class="text-center"><a href="/tthc/chi_tiet/' + item[0] + '" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Chi tiết</a></td>' +
-        '</tr>';
-}
-
-// Hàm render bảng với phân trang
-function renderTable() {
-    if (!allData || allData.length === 0) {
-        var tbody = document.getElementById('tableBody');
-        if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không tìm thấy kết quả nào</td></tr>';
-        }
-        var pagInfo = document.getElementById('paginationInfo');
-        if (pagInfo) pagInfo.innerHTML = '';
-        var pagControls = document.getElementById('paginationControls');
-        if (pagControls) pagControls.innerHTML = '';
-        var pagControlsBottom = document.getElementById('paginationControlsBottom');
-        if (pagControlsBottom) pagControlsBottom.innerHTML = '';
-        return;
-    }
-    
-    const totalItems = allData.length;
-    
-    if (pageSize === 'all') {
-        let html = '';
-        for (let i = 0; i < totalItems; i++) {
-            html += renderRow(allData[i], i);
-        }
-        var tbody = document.getElementById('tableBody');
-        if (tbody) tbody.innerHTML = html;
-        var pagInfo = document.getElementById('paginationInfo');
-        if (pagInfo) pagInfo.innerHTML = 'Hiển thị ' + totalItems + ' trên tổng số ' + totalItems + ' dòng';
-        var pagControls = document.getElementById('paginationControls');
-        if (pagControls) pagControls.innerHTML = '';
-        var pagControlsBottom = document.getElementById('paginationControlsBottom');
-        if (pagControlsBottom) pagControlsBottom.innerHTML = '';
-        return;
-    }
-    
-    totalPages = Math.ceil(totalItems / pageSize);
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-    
-    const start = (currentPage - 1) * pageSize;
-    const end = Math.min(start + pageSize, totalItems);
-    const pageData = allData.slice(start, end);
-    
-    let html = '';
-    for (let i = 0; i < pageData.length; i++) {
-        const globalIdx = start + i;
-        html += renderRow(pageData[i], globalIdx);
-    }
-    var tbody = document.getElementById('tableBody');
-    if (tbody) tbody.innerHTML = html;
-    
-    var pagInfo = document.getElementById('paginationInfo');
-    if (pagInfo) pagInfo.innerHTML = 'Hiển thị ' + (start + 1) + ' - ' + end + ' trên tổng số ' + totalItems + ' dòng';
-    
-    renderPagination();
-}
-
-// Hàm render nút phân trang
-function renderPagination() {
-    if (totalPages <= 1) {
-        var emptyHtml = '<nav><ul class="pagination"><li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li></ul></nav>';
-        var pagControls = document.getElementById('paginationControls');
-        if (pagControls) pagControls.innerHTML = emptyHtml;
-        var pagControlsBottom = document.getElementById('paginationControlsBottom');
-        if (pagControlsBottom) pagControlsBottom.innerHTML = emptyHtml;
-        return;
-    }
-    
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
-    
-    if (endPage - startPage < 4) {
-        if (startPage === 1) {
-            endPage = Math.min(totalPages, startPage + 4);
-        } else if (endPage === totalPages) {
-            startPage = Math.max(1, endPage - 4);
-        }
-    }
-    
-    let pageNumbers = '';
-    for (let i = startPage; i <= endPage; i++) {
-        pageNumbers += '<li class="page-item ' + (i === currentPage ? 'active' : '') + '">' +
-                            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + i + ')">' + i + '</a>' +
-                        '</li>';
-    }
-    
-    var paginationHtml = '<nav><ul class="pagination">' +
-        '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
-            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">« Đầu</a>' +
-        '</li>' +
-        '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
-            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + (currentPage - 1) + ')">‹ Trước</a>' +
-        '</li>' +
-        pageNumbers +
-        '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
-            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + (currentPage + 1) + ')">Sau ›</a>' +
-        '</li>' +
-        '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
-            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + totalPages + ')">Cuối »</a>' +
-        '</li>' +
-        '</ul></nav>';
-    
-    var pagControls = document.getElementById('paginationControls');
-    if (pagControls) pagControls.innerHTML = paginationHtml;
-    var pagControlsBottom = document.getElementById('paginationControlsBottom');
-    if (pagControlsBottom) pagControlsBottom.innerHTML = paginationHtml;
-}
-
-function goToPage(page) {
-    if (page < 1 || page > totalPages) return;
-    currentPage = page;
-    renderTable();
-    var tableDiv = document.querySelector('.table-responsive');
-    if (tableDiv) tableDiv.scrollIntoView({ behavior: 'smooth' });
-}
-
-function changePageSize() {
-    var select = document.getElementById('pageSizeSelect');
-    if (!select) return;
-    var value = select.value;
-    
-    if (value === 'all') {
-        pageSize = 'all';
-    } else {
-        pageSize = parseInt(value);
-    }
-    currentPage = 1;
-    renderTable();
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Hàm tải dữ liệu từ server (dữ liệu đã có sẵn từ Flask)
-function loadDataFromServer() {
-    allData = ketQuaData || [];
-    currentPage = 1;
-    renderTable();
-}
-
-// Sự kiện tìm kiếm (gửi form thông thường, trang sẽ reload)
-document.getElementById('searchForm').addEventListener('submit', function(e) {
-    // Cho phép form submit bình thường để reload với kết quả mới
-    // Không cần xử lý đặc biệt vì Flask sẽ render lại trang
-});
-
-// Sự kiện thay đổi số dòng hiển thị
-var pageSizeSelect = document.getElementById('pageSizeSelect');
-if (pageSizeSelect) {
-    pageSizeSelect.onchange = function() {
-        changePageSize();
-    };
-}
-
-// Khởi tạo dữ liệu
-loadDataFromServer();
-</script>
-</body>
-</html>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr><th>Mã TTHC</th><th>Tên TTHC</th><th>Lĩnh vực</th><th>Cấp thực hiện</th><th>Cơ quan</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for item in results %}
+                <tr>
+                    <td>{{ item[1] }}</td>
+                    <td>{{ item[2] }}</td>
+                    <td>{{ item[3] }}</td>
+                    <td>{{ item[4] }}</td>
+                    <td>{{ item[5] }}</td>
+                    <td><a href="/tthc/chitiet/{{ item[0] }}" class="btn btn-sm btn-primary">Xem</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif keyword %}
+<div class="alert alert-warning mt-4">Không tìm thấy kết quả nào cho "{{ keyword }}"</div>
+{% endif %}
+{% endblock %}
