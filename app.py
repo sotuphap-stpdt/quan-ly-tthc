@@ -1,24 +1,20 @@
-# Thay thế import PDF
 import os
 import sqlite3
 import hashlib
 import shutil
+import difflib
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
 from werkzeug.utils import secure_filename
-import openpyxl
 from openpyxl import load_workbook
-import difflib
-import re
 
-# KHÔNG dùng pdfplumber nếu gây lỗi - dùng PyPDF2 thay thế
+# Try to import PyPDF2 for PDF support (optional)
 try:
     import PyPDF2
     PDF_SUPPORT = True
 except ImportError:
     PDF_SUPPORT = False
-    print("Warning: PyPDF2 not available, PDF OCR disabled")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'sotuphap_dongthap_secret_key_2026')
@@ -156,13 +152,13 @@ def init_db():
                   ('Admin', admin_password, 'admin', 'Quản trị viên', 'admin@dongthap.gov.vn', datetime.now().date()))
         c.execute("INSERT INTO user_quyen (user_id) VALUES (1)")
     
-    # Import sample data from Excel if tthc empty
+    # Import sample data if tthc empty
     c.execute("SELECT COUNT(*) FROM tthc")
     if c.fetchone()[0] == 0:
         sample_data = [
-            ('TTHC001', 'Đăng ký khai sinh', 'Hộ tịch', 'Miễn phí', '0', '', '', '', 'X', '', '', '', '', 'xa', 'Đã công bố', '', 'UBND cấp xã', 'da_cong_bo', '', '03 ngày', 'Luật Hộ tịch', 0, 0, datetime.now().date()),
-            ('TTHC002', 'Cấp Căn cước công dân', 'Căn cước', '50.000', '0', '', '', '', 'X', '', '', '', '', 'tinh', 'Đã công bố', '', 'Công an tỉnh', 'da_cong_bo', '', '07 ngày', 'Luật CCCD', 0, 0, datetime.now().date()),
-            ('TTHC003', 'Đăng ký kinh doanh', 'Kinh doanh', '100.000', '0', '', '', '', 'X', '', '', '', '', 'tinh', 'Đã công bố', '', 'Sở KH&ĐT', 'da_cong_bo', '', '03 ngày', 'Luật DN', 0, 0, datetime.now().date()),
+            ('TTHC001', 'Đăng ký khai sinh', 'Hộ tịch', 'Miễn phí', '0', '', '', '', 'X', '', '', '', '', 'xa', 'Đã công bố', '', 'UBND cấp xã', 'da_cong_bo', 'Giấy khai sinh, Giấy chứng sinh', '03 ngày', 'Luật Hộ tịch', 120, 15, datetime.now().date()),
+            ('TTHC002', 'Cấp Căn cước công dân', 'Căn cước', '50.000', '0', '', '', '', 'X', '', '', '', '', 'tinh', 'Đã công bố', '', 'Công an tỉnh', 'da_cong_bo', 'Tờ khai CCCD, Ảnh thẻ', '07 ngày', 'Luật CCCD', 250, 30, datetime.now().date()),
+            ('TTHC003', 'Đăng ký kinh doanh', 'Kinh doanh', '100.000', '0', '', '', '', 'X', '', '', '', '', 'tinh', 'Đã công bố', '', 'Sở KH&ĐT', 'da_cong_bo', 'Đơn đăng ký, Điều lệ', '03 ngày', 'Luật DN', 89, 12, datetime.now().date()),
         ]
         for item in sample_data:
             c.execute('''INSERT INTO tthc (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, lien_thong_cung_cap,
@@ -264,7 +260,8 @@ def dashboard():
     linh_vuc_filter = ""
     params = []
     if session.get('role') != 'admin' and session.get('linh_vuc'):
-        linh_vuc_filter = "WHERE linh_vuc IN ({})".format(','.join(['?']*len(session['linh_vuc'])))
+        placeholders = ','.join(['?'] * len(session['linh_vuc']))
+        linh_vuc_filter = f"WHERE linh_vuc IN ({placeholders})"
         params = session['linh_vuc']
     
     c.execute(f"SELECT COUNT(*) FROM tthc {linh_vuc_filter}", params)
@@ -327,7 +324,7 @@ def tthc_list():
     linh_vuc_filter = ""
     params = []
     if session.get('role') != 'admin' and session.get('linh_vuc'):
-        placeholders = ','.join(['?']*len(session['linh_vuc']))
+        placeholders = ','.join(['?'] * len(session['linh_vuc']))
         linh_vuc_filter = f"AND linh_vuc IN ({placeholders})"
         params = session['linh_vuc']
     
@@ -463,7 +460,7 @@ def quyet_dinh_create():
                     file.save(filepath)
                     file_dinh_kem = filename
                     
-                    # Simple PDF text extraction (lightweight)
+                    # Simple PDF text extraction
                     if PDF_SUPPORT and filename.lower().endswith('.pdf'):
                         try:
                             with open(filepath, 'rb') as f:
@@ -597,25 +594,25 @@ def api_so_sanh():
             diffs.append({
                 'type': 'replace',
                 'position': {'qd1': {'start': i1, 'end': i2}, 'qd2': {'start': j1, 'end': j2}},
-                'info': f'Nội dung khác nhau: "{text1[i1:i2][:100]}" ↔ "{text2[j1:j2][:100]}"'
+                'info': f'Nội dung khác nhau'
             })
         elif tag == 'insert':
             diffs.append({
                 'type': 'insert',
                 'position': {'qd2': {'start': j1, 'end': j2}},
-                'info': f'Thêm mới trong QĐ2: "{text2[j1:j2][:100]}"'
+                'info': f'Thêm mới trong QĐ2'
             })
         elif tag == 'delete':
             diffs.append({
                 'type': 'delete',
                 'position': {'qd1': {'start': i1, 'end': i2}},
-                'info': f'Bị xóa trong QĐ2: "{text1[i1:i2][:100]}"'
+                'info': f'Bị xóa trong QĐ2'
             })
     
     return jsonify({
-        'qd1': {'so_quyet_dinh': qd1[1], 'ten_quyet_dinh': qd1[2], 'ngay_ban_hanh': qd1[3], 'loai': qd1[4], 'noi_dung': text1[:5000]},
-        'qd2': {'so_quyet_dinh': qd2[1], 'ten_quyet_dinh': qd2[2], 'ngay_ban_hanh': qd2[3], 'loai': qd2[4], 'noi_dung': text2[:5000]},
-        'diffs': diffs[:50]
+        'qd1': {'so_quyet_dinh': qd1[1], 'ten_quyet_dinh': qd1[2], 'ngay_ban_hanh': qd1[3], 'loai': qd1[4], 'noi_dung': text1[:3000]},
+        'qd2': {'so_quyet_dinh': qd2[1], 'ten_quyet_dinh': qd2[2], 'ngay_ban_hanh': qd2[3], 'loai': qd2[4], 'noi_dung': text2[:3000]},
+        'diffs': diffs[:30]
     })
 
 # ==================== BAO CAO ====================
@@ -632,7 +629,7 @@ def bao_cao():
     linh_vuc_filter = ""
     params = []
     if session.get('role') != 'admin' and session.get('linh_vuc'):
-        placeholders = ','.join(['?']*len(session['linh_vuc']))
+        placeholders = ','.join(['?'] * len(session['linh_vuc']))
         linh_vuc_filter = f"WHERE linh_vuc IN ({placeholders})"
         params = session['linh_vuc']
     
@@ -666,7 +663,7 @@ def tim_kiem():
             linh_vuc_filter = ""
             params = [f'%{keyword}%', f'%{keyword}%', f'%{keyword}%']
             if session.get('role') != 'admin' and session.get('linh_vuc'):
-                placeholders = ','.join(['?']*len(session['linh_vuc']))
+                placeholders = ','.join(['?'] * len(session['linh_vuc']))
                 linh_vuc_filter = f"AND linh_vuc IN ({placeholders})"
                 params.extend(session['linh_vuc'])
             
@@ -769,7 +766,7 @@ def phan_quyen():
     c.execute("SELECT DISTINCT linh_vuc FROM tthc WHERE linh_vuc IS NOT NULL AND linh_vuc != ''")
     linh_vuc_list = [row[0] for row in c.fetchall()]
     if not linh_vuc_list:
-        linh_vuc_list = ['HỘ TỊCH', 'LUẬT SƯ', 'CÔNG CHỨNG', 'ĐẤU GIÁ', 'QUẢN TÀI', 'TRỌNG TÀI', 'HÒA GIẢI', 'GIÁM ĐỊNH', 'TRỢ GIÚP PHÁP LÝ']
+        linh_vuc_list = ['HỘ TỊCH', 'LUẬT SƯ', 'CÔNG CHỨNG', 'ĐẤU GIÁ']
     conn.close()
     return render_template('phan_quyen.html', users=users, linh_vuc_list=linh_vuc_list)
 
@@ -892,24 +889,14 @@ def import_excel_page():
                 success = 0
                 
                 for row in ws.iter_rows(min_row=2, values_only=True):
-                    if row[1] and row[2]:
+                    if row[1] and row[2]:  # Ma TTHC and Ten TTHC
                         try:
                             c.execute('''INSERT OR REPLACE INTO tthc 
-                                      (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, lien_thong_cung_cap, lien_thong_02_cap,
-                                       phi_dia_gioi, dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt, dich_vu_bcci,
-                                       ghi_chu, cap_thuc_hien, trang_thai_cong_khai, so_quyet_dinh, co_quan_thuc_hien,
-                                       trang_thai, created_at)
-                                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-                                      (str(row[1]) if row[1] else '', str(row[2]) if row[2] else '',
-                                       str(row[3]) if row[3] else '', str(row[4]) if row[4] else '',
-                                       str(row[5]) if row[5] else '', str(row[6]) if row[6] else '',
-                                       str(row[7]) if row[7] else '', str(row[8]) if row[8] else '',
-                                       str(row[9]) if row[9] else '', str(row[10]) if row[10] else '',
-                                       str(row[11]) if row[11] else '', str(row[12]) if row[12] else '',
-                                       str(row[17]) if len(row) > 17 and row[17] else '',
+                                      (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, cap_thuc_hien, co_quan_thuc_hien, trang_thai, created_at)
+                                      VALUES (?,?,?,?,?,?,?,?,?)''',
+                                      (str(row[1]), str(row[2]), str(row[3]) if row[3] else '',
+                                       str(row[4]) if row[4] else '', str(row[5]) if row[5] else '',
                                        str(row[15]) if len(row) > 15 and row[15] else '',
-                                       str(row[14]) if len(row) > 14 and row[14] else '',
-                                       str(row[13]) if len(row) > 13 and row[13] else '',
                                        str(row[16]) if len(row) > 16 and row[16] else '',
                                        'da_cong_bo', datetime.now().date()))
                             success += 1
@@ -936,4 +923,5 @@ def uploaded_file(filename):
 
 # ==================== RUN ====================
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
