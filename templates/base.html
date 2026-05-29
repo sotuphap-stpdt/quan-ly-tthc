@@ -1,95 +1,142 @@
-<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}QL TTHC Sở Tư pháp Đồng Tháp{% endblock %}</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>{% block title %}Hệ thống TTHC Sở Tư pháp Đồng Tháp{% endblock %}</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <style>
         * {
-            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+        
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-            min-height: 100vh;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e8ecf1 100%);
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
+            min-height: 100vh;
         }
+        
+        .main-content {
+            flex: 1;
+            padding-bottom: 20px;
+        }
+        
+        /* Navbar styles */
+        .navbar-custom {
+            background: linear-gradient(135deg, #0d5c2a 0%, #1e8e3e 100%);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 0.8rem 0;
+        }
+        
         .navbar-brand {
             font-weight: 800;
-            font-size: 1.5rem;
-            background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            font-size: 1.4rem;
+            letter-spacing: -0.5px;
         }
-        .sidebar {
-            background: linear-gradient(180deg, #0d5c2a 0%, #0a4a22 100%);
-            min-height: calc(100vh - 70px);
-            box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+        
+        .navbar-brand i {
+            font-size: 1.6rem;
+            margin-right: 10px;
         }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.85);
-            border-radius: 12px;
-            margin: 4px 12px;
-            padding: 12px 16px;
-            transition: all 0.3s ease;
+        
+        .nav-link {
             font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            margin: 0 2px;
+            color: rgba(255,255,255,0.9) !important;
         }
-        .sidebar .nav-link:hover {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            transform: translateX(4px);
+        
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+            color: white !important;
         }
-        .sidebar .nav-link.active {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            color: white;
-            box-shadow: 0 4px 15px rgba(243,156,18,0.3);
-        }
-        .sidebar .nav-link i {
-            width: 28px;
-            margin-right: 8px;
-        }
-        .card-modern {
+        
+        .dropdown-menu {
+            border-radius: 15px;
             border: none;
-            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 10px;
+        }
+        
+        .dropdown-item {
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
+            color: white;
+        }
+        
+        /* Card styles */
+        .card-modern {
+            background: white;
+            border: none;
+            border-radius: 24px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
-            background: white;
+            overflow: hidden;
         }
+        
         .card-modern:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 30px rgba(0,0,0,0.1);
         }
+        
+        .card-header-custom {
+            background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
+            padding: 1rem 1.5rem;
+            border-bottom: none;
+        }
+        
+        .card-header-custom h3, .card-header-custom h4 {
+            margin: 0;
+            font-weight: 600;
+            color: white;
+        }
+        
+        /* Stat cards */
         .stat-card {
             background: white;
-            border-radius: 24px;
-            padding: 1.5rem;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: 20px;
+            padding: 1.2rem;
             transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.03);
         }
+        
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.1);
         }
+        
         .stat-icon {
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 26px;
         }
+        
+        /* Buttons */
         .btn-gradient {
             background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
             border: none;
@@ -99,221 +146,287 @@
             font-weight: 600;
             transition: all 0.3s;
         }
+        
         .btn-gradient:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30,142,62,0.3);
+            box-shadow: 0 6px 20px rgba(30,142,62,0.35);
             color: white;
         }
+        
         .btn-gradient-orange {
             background: linear-gradient(135deg, #f39c12, #e67e22);
         }
-        footer {
-            background: linear-gradient(135deg, #1a2a3a, #0f1a24);
-            color: rgba(255,255,255,0.85);
-            margin-top: auto;
-            padding: 2rem 0 1rem;
+        
+        /* Filter card */
+        .filter-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        footer a {
-            color: #f39c12;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-        footer a:hover {
-            color: #e67e22;
-            text-decoration: underline;
-        }
-        .table-modern {
+        
+        /* Table styles */
+        .table-custom {
             border-radius: 20px;
             overflow: hidden;
         }
-        .table-modern thead {
+        
+        .table-custom thead {
             background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
             color: white;
         }
-        .alert-custom {
-            border-radius: 16px;
+        
+        .table-custom thead th {
+            font-weight: 600;
+            padding: 12px;
             border: none;
         }
-        .breadcrumb-custom {
-            background: transparent;
-            padding: 0;
+        
+        .table-custom tbody tr:hover {
+            background-color: rgba(30,142,62,0.05);
         }
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            display: flex;
-            align-items: center;
+        
+        /* Control bar */
+        .control-bar {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        /* Pagination */
+        .pagination {
+            margin: 0;
+            flex-wrap: wrap;
             justify-content: center;
+        }
+        
+        .pagination .page-link {
+            cursor: pointer;
+            margin: 2px;
+            border-radius: 10px !important;
+            color: #1e8e3e;
+            border: 1px solid #dee2e6;
+        }
+        
+        .pagination .active .page-link {
+            background: linear-gradient(135deg, #1e8e3e, #0d5c2a);
+            border-color: #1e8e3e;
             color: white;
-            font-weight: bold;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        
+        /* Footer - giữ nguyên thông tin theo yêu cầu */
+        .footer {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px 0 20px;
+            margin-top: 40px;
+            width: 100%;
         }
-        .fade-in {
-            animation: fadeIn 0.5s ease forwards;
+        
+        .footer .footer-info {
+            text-align: center;
         }
-        .footer-brand {
-            font-size: 1.3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+        
+        .footer .footer-info p {
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        
+        .footer .footer-info i {
+            width: 30px;
+            margin-right: 8px;
+            opacity: 0.8;
+        }
+        
+        .footer .footer-info strong {
+            font-weight: 600;
+        }
+        
+        .footer .copyright {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        
+        /* Badge styles */
+        .badge-da-cong-bo {
+            background-color: #28a745;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        
+        .badge-bai-bo {
+            background-color: #dc3545;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+        
+        /* Row bãi bỏ */
+        .row-bai-bo {
+            background-color: #f8d7da;
+        }
+        
+        .text-strikethrough {
+            text-decoration: line-through;
+            color: #dc3545 !important;
+        }
+        
+        /* Page size select */
+        .page-size-select {
+            width: auto;
+            display: inline-block;
+            border-radius: 10px;
+        }
+        
+        /* Search box */
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        /* Detail page */
+        .detail-label {
+            font-weight: 600;
+            background-color: #f8f9fa;
+            width: 250px;
+        }
+        
+        .section-title {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1e8e3e;
+            font-weight: 600;
+            border-radius: 0 10px 10px 0;
         }
     </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="fas fa-gavel me-2" style="color: #1e8e3e;"></i>
-                TTHC Đồng Tháp
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand text-white" href="/">
+                <i class="fas fa-chart-line"></i>
+                HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
-                            <div class="avatar me-2">
-                                {{ session.get('fullname', 'U')|first|upper }}
-                            </div>
-                            <span class="fw-semibold">{{ session.get('fullname', session.get('username', 'User')) }}</span>
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-plus-circle"></i> Thêm mới
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-4">
-                            <li><a class="dropdown-item" href="{{ url_for('doi_mat_khau') }}"><i class="fas fa-key me-2"></i>Đổi mật khẩu</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
+                            <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
                         </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-2 d-md-block sidebar p-0">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-tachometer-alt"></i> Tổng quan
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint in ['tthc_list', 'tthc_create', 'tthc_edit'] %}active{% endif %}" href="{{ url_for('tthc_list') }}">
-                                <i class="fas fa-folder-open"></i> TTHC
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint in ['quyet_dinh_list', 'quyet_dinh_create'] %}active{% endif %}" href="{{ url_for('quyet_dinh_list') }}">
-                                <i class="fas fa-file-alt"></i> Quyết định
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'so_sanh_page' %}active{% endif %}" href="{{ url_for('so_sanh_page') }}">
-                                <i class="fas fa-code-branch"></i> So sánh QĐ
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'tim_kiem' %}active{% endif %}" href="{{ url_for('tim_kiem') }}">
-                                <i class="fas fa-search"></i> Tìm kiếm
-                            </a>
-                        </li>
-                        {% if session.get('quyen_bao_cao') or session.get('role') == 'admin' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'bao_cao' %}active{% endif %}" href="{{ url_for('bao_cao') }}">
-                                <i class="fas fa-chart-bar"></i> Báo cáo
-                            </a>
-                        </li>
-                        {% endif %}
-                        {% if session.get('role') == 'admin' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'danh_sach_users' %}active{% endif %}" href="{{ url_for('danh_sach_users') }}">
-                                <i class="fas fa-users"></i> Người dùng
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'phan_quyen' %}active{% endif %}" href="{{ url_for('phan_quyen') }}">
-                                <i class="fas fa-lock"></i> Phân quyền
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'backup_list' %}active{% endif %}" href="{{ url_for('backup_list') }}">
-                                <i class="fas fa-database"></i> Sao lưu
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'import_excel_page' %}active{% endif %}" href="{{ url_for('import_excel_page') }}">
-                                <i class="fas fa-file-excel"></i> Import Excel
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </nav>
-
-            <!-- Main Content -->
-            <main class="col-md-10 ms-sm-auto px-md-4 py-4">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show shadow-sm rounded-4 border-0" role="alert">
-                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-                
-                <div class="fade-in">
-                    {% block content %}{% endblock %}
-                </div>
-            </main>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container mt-4">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show shadow-sm rounded-4 border-0 fade-in-up" role="alert">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message | safe }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer>
+    <!-- Footer - giữ nguyên thông tin theo yêu cầu -->
+    <footer class="footer">
         <div class="container">
-            <div class="row">
-                <div class="col-md-5 mb-3">
-                    <div class="footer-brand mb-2">
-                        <i class="fas fa-gavel me-2"></i>SỞ TƯ PHÁP TỈNH ĐỒNG THÁP
-                    </div>
-                    <p class="small">Hệ thống quản lý thủ tục hành chính - Cải cách hành chính hiện đại, minh bạch, hiệu quả.</p>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <h6><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ</h6>
-                    <p class="small mb-1">381 Hùng Vương, phường Đạo Thạnh, thành phố Cao Lãnh, tỉnh Đồng Tháp</p>
-                    <h6 class="mt-2"><i class="fas fa-phone-alt me-2"></i>Điện thoại</h6>
-                    <p class="small">085 3993 892</p>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <h6><i class="fas fa-envelope me-2"></i>Email</h6>
-                    <p class="small">stp@dongthap.gov.vn</p>
-                    <h6><i class="fas fa-globe me-2"></i>Website</h6>
-                    <p class="small">sotuphap.dongthap.gov.vn</p>
-                </div>
+            <div class="footer-info">
+                <p><i class="fas fa-building"></i> <strong>Sở Tư pháp tỉnh Đồng Tháp</strong></p>
+                <p><i class="fas fa-map-marker-alt"></i> 381 Hùng Vương, phường Đạo Thạnh, tỉnh Đồng Tháp</p>
+                <p><i class="fas fa-phone-alt"></i> 085 3993 892 &nbsp;&nbsp;|&nbsp;&nbsp; <i class="fas fa-envelope"></i> stp@dongthap.gov.vn</p>
             </div>
-            <hr class="bg-secondary">
-            <div class="text-center small">
-                &copy; 2025 Sở Tư pháp tỉnh Đồng Tháp. Toàn quyền được bảo lưu.
+            <div class="copyright">
+                <p>© 2026 Hệ thống quản lý Thủ tục hành chính Sở Tư pháp tỉnh Đồng Tháp. Phiên bản 1.0</p>
             </div>
         </div>
     </footer>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Hàm escapeHtml chung
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Auto close alerts after 5 seconds
+        setTimeout(function() {
+            document.querySelectorAll('.alert').forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                setTimeout(function() {
+                    bsAlert.close();
+                }, 5000);
+            });
+        }, 1000);
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
