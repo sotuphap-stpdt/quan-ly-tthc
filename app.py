@@ -8,7 +8,199 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
 from werkzeug.utils import secure_filename
 from openpyxl import load_workbook
+# Thêm vào app.py sau các import
 
+import zipfile
+import tempfile
+import shutil
+
+# ==================== BACKUP & RESTORE APIs ====================
+
+@app.route('/api/backup/list')
+def api_backup_list():
+    """Lấy danh sách các bản sao lưu"""
+    backups = []
+    backup_dir = app.config.get('BACKUP_FOLDER', 'backups')
+    
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir, exist_ok=True)
+    
+    for f in os.listdir(backup_dir):
+        if f.startswith('tthc_backup_') and (f.endswith('.db') or f.endswith('.zip')):
+            filepath = os.path.join(backup_dir, f)
+            stat = os.stat(filepath)
+            backups.append({
+                'name': f,
+                'size': stat.st_size,
+                'date': datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+            })
+    
+    backups.sort(key=lambda x: x['date'], reverse=True)
+    return jsonify({'backups': backups})
+
+@app.route('/api/backup/create', methods=['POST'])
+def api_backup_create():
+    """Tạo bản sao lưu mới"""
+    try:
+        backup_dir = app.config.get('BACKUP_FOLDER', 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = os.path.join(backup_dir, f"tthc_backup_{timestamp}.db")
+        
+        # Copy database
+        if os.path.exists('tthc.db'):
+            shutil.copy2('tthc.db', backup_file)
+            
+            # Nén file để tiết kiệm dung lượng
+            zip_file = os.path.join(backup_dir, f"tthc_backup_{timestamp}.zip")
+            with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.write(backup_file, 'tthc.db')
+            
+            # Xóa file db gốc sau khi nén
+            os.remove(backup_file)
+            
+            return jsonify({
+                'success': True,
+                'filename': f"tthc_backup_{timestamp}.zip",
+                'message': 'Tạo bản sao lưu thành công'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Không tìm thấy database'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/backup/restore', methods=['POST'])
+def api_backup_restore():
+    """Phục hồi dữ liệu từ bản sao lưu"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        
+        if not filename:
+            return jsonify({'success': False, 'error': 'Thiếu tên file'})
+        
+        backup_dir = app.config.get('BACKUP_FOLDER', 'backups')
+        filepath = os.path.join(backup_dir, filename)
+        
+        if not os.path.exists(filepath):
+            return jsonify({'success': False, 'error': 'File không tồn tại'})
+        
+        # Backup database hiện tại trước khi restore
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        pre_restore_backup = os.path.join(backup_dir, f"pre_restore_backup_{timestamp}.db")
+        if os.path.exists('tthc.db'):
+            shutil.copy2('tthc.db', pre_restore_backup)
+        
+        # Giải nén hoặc copy file
+        temp_db = os.path.join(tempfile.gettempdir(), 'restore_temp.db')
+        
+        if filename.endswith('.zip'):
+            with zipfile.ZipFile(filepath, 'r') as zf:
+                # Tìm file .db trong zip
+                db_files = [f for f in zf.namelist() if f.endswith('.db')]
+                if db_files:
+                    zf.extract(db_files[0], tempfile.gettempdir())
+                    extracted_path = os.path.join(tempfile.gettempdir(), db_files[0])
+                    shutil.copy2(extracted_path, 'tthc.db')
+                    os.remove(extracted_path)
+                else:
+                    return jsonify({'success': False, 'error': 'File zip không chứa database'})
+        else:
+            shutil.copy2(filepath, 'tthc.db')
+        
+        return jsonify({'success': True, 'message': 'Phục hồi dữ liệu thành công'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/backup/download/<path:filename>')
+def api_backup_download(filename):
+    """Tải xuống file sao lưu"""
+    try:
+        backup_dir = app.config.get('BACKUP_FOLDER', 'backups')
+        safe_filename = os.path.basename(filename)
+        filepath = os.path.join(backup_dir, safe_filename)
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File không tồn tại'}), 404
+        
+        return send_from_directory(backup_dir, safe_filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/backup/delete', methods=['POST'])
+def api_backup_delete():
+    """Xóa bản sao lưu"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        
+        if not filename:
+            return jsonify({'success': False, 'error': 'Thiếu tên file'})
+        
+        backup_dir = app.config.get('BACKUP_FOLDER', 'backups')
+        safe_filename = os.path.basename(filename)
+        filepath = os.path.join(backup_dir, safe_filename)
+        
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return jsonify({'success': True, 'message': 'Đã xóa'})
+        else:
+            return jsonify({'success': False, 'error': 'File không tồn tại'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/backup/upload', methods=['POST'])
+def api_backup_upload():
+    """Tải lên file sao lưu và phục hồi"""
+    try:
+        if 'backup_file' not in request.files:
+            return jsonify({'success': False, 'error': 'Không có file được chọn'})
+        
+        file = request.files['backup_file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'Chưa chọn file'})
+        
+        filename = secure_filename(file.filename)
+        backup_dir = app.config.get('BACKUP_FOLDER', 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # Lưu file tạm thời
+        temp_path = os.path.join(backup_dir, f"uploaded_{filename}")
+        file.save(temp_path)
+        
+        # Backup hiện tại
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        pre_restore_backup = os.path.join(backup_dir, f"pre_restore_backup_{timestamp}.db")
+        if os.path.exists('tthc.db'):
+            shutil.copy2('tthc.db', pre_restore_backup)
+        
+        # Phục hồi
+        if filename.endswith('.zip'):
+            with zipfile.ZipFile(temp_path, 'r') as zf:
+                db_files = [f for f in zf.namelist() if f.endswith('.db')]
+                if db_files:
+                    zf.extract(db_files[0], tempfile.gettempdir())
+                    extracted_path = os.path.join(tempfile.gettempdir(), db_files[0])
+                    shutil.copy2(extracted_path, 'tthc.db')
+                    os.remove(extracted_path)
+                else:
+                    os.remove(temp_path)
+                    return jsonify({'success': False, 'error': 'File zip không chứa database'})
+        elif filename.endswith('.db') or filename.endswith('.sqlite') or filename.endswith('.sqlite3'):
+            shutil.copy2(temp_path, 'tthc.db')
+        else:
+            os.remove(temp_path)
+            return jsonify({'success': False, 'error': 'Định dạng file không hỗ trợ'})
+        
+        # Xóa file tạm
+        os.remove(temp_path)
+        
+        return jsonify({'success': True, 'message': 'Tải lên và phục hồi thành công'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 # Try to import PyPDF2 for PDF support (optional)
 try:
     import PyPDF2
