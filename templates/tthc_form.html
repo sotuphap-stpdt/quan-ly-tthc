@@ -1,146 +1,110 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ 'Sửa' if tthc else 'Thêm' }} Thủ tục hành chính - HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
-        .main-content { flex: 1; }
-        .form-section { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #007bff; }
-        .form-section h5 { color: #007bff; margin-bottom: 15px; }
-        .checkbox-group { display: flex; gap: 20px; flex-wrap: wrap; }
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
-        .loading-spinner { background: white; padding: 30px; border-radius: 10px; text-align: center; }
-        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
-        .footer .footer-info { text-align: center; }
-        .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
-        .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
-        .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
-        .dropdown-menu { min-width: 200px; }
-        .dropdown-item i { width: 20px; margin-right: 8px; }
-    </style>
-</head>
-<body>
-<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-3x text-primary"></i><p>Đang xử lý...</p></div></div>
+{% extends "base.html" %}
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
-    <div class="container">
-        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-plus-circle"></i> Thêm mới</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
-                        <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
-                        {% if role == 'admin' %}
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
-                        <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
-                        {% endif %}
-                    </ul>
-                </li>
-                <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
-                <li class="nav-item"><a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a></li>
-                <li class="nav-item"><a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a></li>
-                <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
-                <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
-            </ul>
-        </div>
-        <div class="ms-auto">
-            <div class="dropdown">
-                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/doi_mat_khau"><i class="fas fa-key"></i> Đổi mật khẩu</a></li>
-                    {% if role == 'admin' %}
-                    <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
-                    <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
-                    {% endif %}
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</nav>
+{% block title %}{{ 'Sửa' if tthc else 'Thêm mới' }} TTHC{% endblock %}
 
-<div class="main-content">
-    <div class="container mt-4">
-        <h2><i class="fas fa-{{ 'edit' if tthc else 'plus' }}"></i> {{ 'Sửa' if tthc else 'Thêm' }} Thủ tục hành chính</h2>
-        
-        <div class="card mb-4"><div class="card-header bg-success text-white"><h5><i class="fas fa-file-excel"></i> Import dữ liệu từ Excel</h5></div><div class="card-body">
-            <form method="POST" action="/tthc/them" enctype="multipart/form-data" id="importForm">
-                <div class="row"><div class="col-md-8"><input type="file" name="file_excel" class="form-control" accept=".xlsx,.xls" required></div><div class="col-md-4"><button type="submit" class="btn btn-success w-100" id="btnImport"><i class="fas fa-upload"></i> Import</button></div></div>
-            </form>
-            <hr><div class="text-center"><a href="/tai_file_mau" class="btn btn-info" id="btnTaiMau"><i class="fas fa-download"></i> Tải file mẫu Excel</a><span id="thongBaoTai" class="ms-3"></span></div>
-        </div></div>
-        
-        <div class="alert alert-info"><i class="fas fa-info-circle"></i> <strong>Cấu trúc file mẫu:</strong> STT | MÃ TTHC | Tên TTHC | Lĩnh vực | Phí | Lệ Phí | Cấp thực hiện | Cơ quan thực hiện | Cùng cấp | 02 cấp | Phi địa giới | Toàn trình | Một phần | Cung cấp TT | Dịch vụ BCCI | Quyết định số | TRẠNG THÁI | Ghi chú</div>
-        
-        <hr><h4><i class="fas fa-keyboard"></i> Hoặc nhập thủ công:</h4>
-        
-        <form method="POST" action="/tthc/them" id="manualForm">
-            <div class="form-section"><h5>Thông tin cơ bản</h5>
-                <div class="row"><div class="col-md-6"><label>Mã TTHC</label><input type="text" name="ma_tthc" class="form-control" value="{{ tthc[1] if tthc else '' }}"></div><div class="col-md-6"><label>Tên TTHC</label><input type="text" name="ten_tthc" class="form-control" value="{{ tthc[2] if tthc else '' }}"></div><div class="col-md-12 mt-2"><label>Lĩnh vực</label><input type="text" name="linh_vuc" class="form-control" value="{{ tthc[3] if tthc else '' }}"></div></div>
-            </div>
-            
-            <div class="form-section"><h5>Phí, lệ phí</h5><div class="checkbox-group"><label><input type="checkbox" name="phi" {% if tthc and tthc[4]=='X' %}checked{% endif %}> Có phí</label><label><input type="checkbox" name="le_phi" {% if tthc and tthc[5]=='X' %}checked{% endif %}> Có lệ phí</label></div></div>
-            
-            <div class="form-section"><h5>Cấp thực hiện & Cơ quan</h5>
-                <div class="row"><div class="col-md-6"><label>Cấp thực hiện</label><select name="cap_thuc_hien" class="form-select" id="capThucHien"><option value="">-- Chọn --</option><option value="bo" {% if tthc and tthc[14]=='bo' %}selected{% endif %}>Cấp Bộ</option><option value="tinh" {% if tthc and tthc[14]=='tinh' %}selected{% endif %}>Cấp tỉnh</option><option value="xa" {% if tthc and tthc[14]=='xa' %}selected{% endif %}>Cấp xã</option><option value="dung_chung" {% if tthc and tthc[14]=='dung_chung' %}selected{% endif %}>Dùng chung</option><option value="lien_thong" {% if tthc and tthc[14]=='lien_thong' %}selected{% endif %}>Liên thông</option></select></div>
-                <div class="col-md-6"><label>Cơ quan thực hiện</label><input type="text" name="co_quan_thuc_hien" class="form-control" value="{{ tthc[16] if tthc and tthc|length > 16 else '' }}" placeholder="Để trống sẽ tự động theo cấp"></div></div>
-            </div>
-            
-            <div class="form-section"><h5>TTHC liên thông, không thuộc địa giới</h5><div class="checkbox-group"><label><input type="checkbox" name="lien_thong_cung_cap" {% if tthc and tthc[6]=='X' %}checked{% endif %}> Cùng cấp</label><label><input type="checkbox" name="lien_thong_02_cap" {% if tthc and tthc[7]=='X' %}checked{% endif %}> 02 cấp</label><label><input type="checkbox" name="phi_dia_gioi" {% if tthc and tthc[8]=='X' %}checked{% endif %}> Phi địa giới</label></div></div>
-            
-            <div class="form-section"><h5>Dịch vụ công trực tuyến</h5><div class="checkbox-group"><label><input type="checkbox" name="dvc_toan_trinh" {% if tthc and tthc[9]=='X' %}checked{% endif %}> Toàn trình</label><label><input type="checkbox" name="dvc_mot_phan" {% if tthc and tthc[10]=='X' %}checked{% endif %}> Một phần</label><label><input type="checkbox" name="dvc_cung_cap_tt" {% if tthc and tthc[11]=='X' %}checked{% endif %}> Cung cấp thông tin</label></div></div>
-            
-            <div class="form-section"><h5>Thông tin bổ sung</h5>
-                <div class="row">
-                    <div class="col-md-12"><label>Dịch vụ BCCI</label><input type="text" name="dich_vu_bcci" class="form-control" value="{{ tthc[12] if tthc else '' }}"></div>
-                    <div class="col-md-12"><label>Ghi chú</label><textarea name="ghi_chu" class="form-control">{{ tthc[13] if tthc else '' }}</textarea></div>
-                    <div class="col-md-6"><label>Trạng thái công khai</label><select name="trang_thai_cong_khai" class="form-select"><option value="">-- Chọn --</option><option value="toan_trinh" {% if tthc and tthc[15]=='toan_trinh' %}selected{% endif %}>Toàn trình</option><option value="cong_khai_mot_phan" {% if tthc and tthc[15]=='cong_khai_mot_phan' %}selected{% endif %}>Một phần</option><option value="chua_cong_khai" {% if tthc and tthc[15]=='chua_cong_khai' %}selected{% endif %}>Chưa công khai</option></select></div>
-                    <div class="col-md-6"><label><i class="fas fa-gavel"></i> Quyết định số</label><input type="text" name="so_quyet_dinh" class="form-control" value="{{ tthc[16] if tthc and tthc|length > 16 else '' }}"></div>
-                    <div class="col-md-6 mt-2">
-                        <label class="form-label"><i class="fas fa-flag-checkered"></i> Trạng thái</label>
-                        <select name="trang_thai_tt" class="form-select">
-                            <option value="da_cong_bo" {% if tthc and tthc|length > 18 and tthc[18] == 'da_cong_bo' %}selected{% endif %}>Đã công bố</option>
-                            <option value="bai_bo" {% if tthc and tthc|length > 18 and tthc[18] == 'bai_bo' %}selected{% endif %}>Bãi bỏ</option>
-                        </select>
-                        <div class="form-text text-muted">Chọn "Bãi bỏ" sẽ tô đỏ và gạch ngang thủ tục trong danh sách</div>
-                    </div>
+{% block content %}
+<div class="form-container">
+    <h3><i class="fas {{ 'fa-edit' if tthc else 'fa-plus' }}"></i> {{ 'CẬP NHẬT' if tthc else 'THÊM MỚI' }} THỦ TỤC HÀNH CHÍNH</h3>
+    <hr>
+    
+    <form method="POST">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Mã TTHC <span class="text-danger">*</span></label>
+                    <input type="text" name="ma_tthc" class="form-control" value="{{ tthc[1] if tthc else '' }}" required>
                 </div>
             </div>
-            
-            <div class="mt-4"><button type="submit" class="btn btn-primary btn-lg" id="btnManualSubmit"><i class="fas fa-save"></i> Lưu</button> <a href="/tthc" class="btn btn-secondary btn-lg">Hủy</a></div>
-        </form>
-    </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Lĩnh vực</label>
+                    <select name="linh_vuc" class="form-control">
+                        <option value="">-- Chọn lĩnh vực --</option>
+                        {% for lv in linh_vuc_list %}
+                        <option value="{{ lv }}" {% if tthc and tthc[3] == lv %}selected{% endif %}>{{ lv }}</option>
+                        {% endfor %}
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Tên TTHC <span class="text-danger">*</span></label>
+            <input type="text" name="ten_tthc" class="form-control" value="{{ tthc[2] if tthc else '' }}" required>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Phí, lệ phí</label>
+                    <input type="text" name="phi" class="form-control" value="{{ tthc[4] if tthc else '' }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Cấp thực hiện</label>
+                    <select name="cap_thuc_hien" class="form-control">
+                        <option value="tinh" {% if tthc and tthc[13] == 'tinh' %}selected{% endif %}>Cấp tỉnh</option>
+                        <option value="xa" {% if tthc and tthc[13] == 'xa' %}selected{% endif %}>Cấp xã</option>
+                        <option value="bo" {% if tthc and tthc[13] == 'bo' %}selected{% endif %}>Cấp Bộ</option>
+                        <option value="dung_chung" {% if tthc and tthc[13] == 'dung_chung' %}selected{% endif %}>Dùng chung</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Cơ quan thực hiện</label>
+                    <input type="text" name="co_quan_thuc_hien" class="form-control" value="{{ tthc[16] if tthc and tthc[16] else '' }}">
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Thời gian giải quyết</label>
+                    <input type="text" name="thoi_gian_giai_quyet" class="form-control" value="{{ tthc[19] if tthc and tthc[19] else '' }}" placeholder="VD: 05 ngày làm việc">
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="form-group">
+                    <label>Thành phần hồ sơ</label>
+                    <input type="text" name="thanh_phan_ho_so" class="form-control" value="{{ tthc[18] if tthc and tthc[18] else '' }}">
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Căn cứ pháp lý</label>
+            <textarea name="can_cu_phap_ly" class="form-control" rows="3">{{ tthc[20] if tthc and tthc[20] else '' }}</textarea>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input type="checkbox" name="dvc_toan_trinh" value="X" class="form-check-input" id="dvc1" {% if tthc and tthc[8] == 'X' %}checked{% endif %}>
+                    <label class="form-check-label" for="dvc1">DVC toàn trình</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input type="checkbox" name="dvc_mot_phan" value="X" class="form-check-input" id="dvc2" {% if tthc and tthc[9] == 'X' %}checked{% endif %}>
+                    <label class="form-check-label" for="dvc2">DVC một phần</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input type="checkbox" name="dvc_cung_cap_tt" value="X" class="form-check-input" id="dvc3" {% if tthc and tthc[10] == 'X' %}checked{% endif %}>
+                    <label class="form-check-label" for="dvc3">Cung cấp thông tin</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu lại</button>
+            <a href="/tthc" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+        </div>
+    </form>
 </div>
-
-<footer class="footer">
-    <div class="container">
-        <div class="footer-info">
-            <p><i class="fas fa-building"></i> <strong>Sở Tư pháp tỉnh Đồng Tháp</strong></p>
-            <p><i class="fas fa-map-marker-alt"></i> 381 Hùng Vương, phường Đạo Thạnh, tỉnh Đồng Tháp</p>
-            <p><i class="fas fa-phone-alt"></i> 085 3993 892 &nbsp;&nbsp;|&nbsp;&nbsp; <i class="fas fa-envelope"></i> stp@dongthap.gov.vn</p>
-        </div>
-        <div class="copyright">
-            <p>© 2026 Hệ thống quản lý Thủ tục hành chính Sở Tư pháp tỉnh Đồng Tháp. Phiên bản 1.0</p>
-        </div>
-    </div>
-</footer>
-
-<script>
-document.getElementById('btnTaiMau')?.addEventListener('click', function(){const tb=document.getElementById('thongBaoTai');tb.innerHTML='<i class="fas fa-spinner fa-spin"></i> Đang tải...';setTimeout(()=>{tb.innerHTML='<i class="fas fa-check-circle text-success"></i> Tải file mẫu thành công!';setTimeout(()=>{tb.innerHTML='';},3000);},500);});
-document.getElementById('importForm')?.addEventListener('submit',function(){document.getElementById('loadingOverlay').style.display='flex';document.getElementById('btnImport').disabled=true;document.getElementById('btnImport').innerHTML='<i class="fas fa-spinner fa-spin"></i> Đang import...';});
-document.getElementById('manualForm')?.addEventListener('submit',function(){document.getElementById('loadingOverlay').style.display='flex';const btn=document.getElementById('btnManualSubmit');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Đang lưu...';}});
-</script>
-</body>
-</html>
+{% endblock %}
