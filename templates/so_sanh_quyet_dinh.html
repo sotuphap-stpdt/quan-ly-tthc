@@ -1,253 +1,55 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>So sánh quyết định - HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
-        .main-content { flex: 1; }
-        .qd-card { cursor: pointer; transition: all 0.3s; margin-bottom: 10px; }
-        .qd-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .qd-selected { background-color: #28a745; color: white; border-color: #28a745; }
-        .table-cong-bo { background-color: #d4edda; }
-        .table-sua_doi { background-color: #fff3cd; }
-        .table-thay_the { background-color: #cce5ff; }
-        .table-bai_bo { background-color: #f8d7da; }
-        .legend-box { display: inline-block; width: 20px; height: 20px; margin-right: 5px; border-radius: 3px; }
-        .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
-        .footer .footer-info { text-align: center; }
-        .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
-        .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
-        .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
-        .dropdown-menu { min-width: 200px; }
-        .dropdown-item i { width: 20px; margin-right: 8px; }
-    </style>
-</head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
-    <div class="container">
-        <a class="navbar-brand" href="/"><i class="fas fa-chart-line"></i> HỆ THỐNG TTHC SỞ TƯ PHÁP TỈNH ĐỒNG THÁP</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-plus-circle"></i> Thêm mới</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
-                        <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
-                        {% if role == 'admin' %}
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
-                        <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
-                        {% endif %}
-                    </ul>
-                </li>
-                <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
-                <li class="nav-item"><a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a></li>
-                <li class="nav-item"><a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a></li>
-                <li class="nav-item"><a class="nav-link" href="/so_sanh_quyet_dinh"><i class="fas fa-balance-scale"></i> So sánh</a></li>
-                <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
-            </ul>
-        </div>
-        <div class="ms-auto">
-            <div class="dropdown">
-                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/doi_mat_khau"><i class="fas fa-key"></i> Đổi mật khẩu</a></li>
-                    {% if role == 'admin' %}
-                    <li><a class="dropdown-item" href="/users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
-                    <li><a class="dropdown-item" href="/backup"><i class="fas fa-database"></i> Sao lưu dữ liệu</a></li>
-                    {% endif %}
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</nav>
+{% extends "base.html" %}
 
-<div class="main-content">
-    <div class="container mt-4">
-        <h2><i class="fas fa-balance-scale"></i> So sánh quyết định công bố</h2>
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> <strong>Hướng dẫn:</strong> Click chọn các quyết định (có thể chọn nhiều) → bấm So sánh
-        </div>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">Chọn quyết định</div>
-                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                        <div id="qdList"></div>
-                        <button id="btnSoSanh" class="btn btn-success w-100 mt-3"><i class="fas fa-chart-line"></i> So sánh</button>
-                        <button id="btnBoChon" class="btn btn-secondary w-100 mt-2"><i class="fas fa-undo"></i> Bỏ chọn</button>
-                    </div>
+{% block title %}So sánh Quyết định{% endblock %}
+
+{% block content %}
+<h2><i class="fas fa-code-branch"></i> So sánh Quyết định</h2>
+
+<div class="card shadow mt-3">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-5">
+                    <select name="qd1_id" class="form-control" required>
+                        <option value="">-- Chọn quyết định 1 --</option>
+                        {% for qd in quyet_dinh_list %}
+                        <option value="{{ qd[0] }}" {% if qd1 and qd1[0] == qd[0] %}selected{% endif %}>{{ qd[1] }} - {{ qd[2][:50] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 text-center fw-bold">VS</div>
+                <div class="col-md-5">
+                    <select name="qd2_id" class="form-control" required>
+                        <option value="">-- Chọn quyết định 2 --</option>
+                        {% for qd in quyet_dinh_list %}
+                        <option value="{{ qd[0] }}" {% if qd2 and qd2[0] == qd[0] %}selected{% endif %}>{{ qd[1] }} - {{ qd[2][:50] }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header bg-success text-white">Kết quả so sánh</div>
-                    <div class="card-body" id="ketQua">
-                        <div class="alert alert-secondary text-center">
-                            <i class="fas fa-info-circle"></i> Chọn quyết định và bấm "So sánh" để xem kết quả
-                        </div>
-                    </div>
-                </div>
+            <div class="mt-3 text-center">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-compare"></i> So sánh</button>
             </div>
-        </div>
-        <a href="/" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left"></i> Về Dashboard</a>
+        </form>
     </div>
 </div>
 
-<footer class="footer">
-    <div class="container">
-        <div class="footer-info">
-            <p><i class="fas fa-building"></i> <strong>Sở Tư pháp tỉnh Đồng Tháp</strong></p>
-            <p><i class="fas fa-map-marker-alt"></i> 381 Hùng Vương, phường Đạo Thạnh, tỉnh Đồng Tháp</p>
-            <p><i class="fas fa-phone-alt"></i> 085 3993 892 &nbsp;&nbsp;|&nbsp;&nbsp; <i class="fas fa-envelope"></i> stp@dongthap.gov.vn</p>
-        </div>
-        <div class="copyright">
-            <p>© 2026 Hệ thống quản lý Thủ tục hành chính Sở Tư pháp tỉnh Đồng Tháp. Phiên bản 1.0</p>
-        </div>
+{% if result %}
+<div class="card shadow mt-4">
+    <div class="card-header bg-primary text-white">Kết quả so sánh</div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Tiêu chí</th><th>Quyết định 1</th><th>Quyết định 2</th></tr>
+            </thead>
+            <tbody>
+                <tr><th>Số quyết định</th><td>{{ result.so_quyet_dinh[0] }}</td><td>{{ result.so_quyet_dinh[1] }}</td></tr>
+                <tr><th>Tên quyết định</th><td>{{ result.ten_quyet_dinh[0] }}</td><td>{{ result.ten_quyet_dinh[1] }}</td></tr>
+                <tr><th>Ngày ban hành</th><td>{{ result.ngay_ban_hanh[0] }}</td><td>{{ result.ngay_ban_hanh[1] }}</td></tr>
+                <tr><th>Loại</th><td>{{ result.loai[0] }}</td><td>{{ result.loai[1] }}</td></tr>
+            </tbody>
+        </table>
     </div>
-</footer>
-
-<script>
-let quyetDinhs = [];
-let selectedIds = [];
-
-$.get('/api/quyet_dinh', function(data) {
-    quyetDinhs = data;
-    renderList();
-});
-
-function renderList() {
-    let html = '';
-    quyetDinhs.forEach(qd => {
-        let isSelected = selectedIds.includes(qd.id);
-        let colorClass = '';
-        if (qd.loai === 'cong_bo') colorClass = 'bg-success text-white';
-        else if (qd.loai === 'sua_doi') colorClass = 'bg-warning';
-        else if (qd.loai === 'thay_the') colorClass = 'bg-info text-white';
-        else if (qd.loai === 'bai_bo') colorClass = 'bg-danger text-white';
-        
-        html += `
-            <div class="card qd-card ${isSelected ? 'qd-selected' : ''}" onclick="toggleSelect(${qd.id})">
-                <div class="card-body ${isSelected ? '' : colorClass}">
-                    <strong>${escapeHtml(qd.so_quyet_dinh)}</strong><br>
-                    <small>${escapeHtml(qd.ten_quyet_dinh || '')} - ${qd.ngay_ban_hanh}</small>
-                </div>
-            </div>
-        `;
-    });
-    $('#qdList').html(html || '<div class="alert alert-warning">Chưa có quyết định nào</div>');
-}
-
-function toggleSelect(id) {
-    if (selectedIds.includes(id)) {
-        selectedIds = selectedIds.filter(i => i !== id);
-    } else {
-        selectedIds.push(id);
-    }
-    renderList();
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-$('#btnSoSanh').click(() => {
-    if (selectedIds.length < 2) {
-        alert('Vui lòng chọn ít nhất 2 quyết định để so sánh!');
-        return;
-    }
-    
-    $('#ketQua').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang so sánh...</div>');
-    
-    $.get(`/api/so_sanh_quyet_dinh?qd_ids=${selectedIds.join(',')}`, function(data) {
-        let html = `
-            <div class="alert alert-secondary mb-3">
-                <strong><i class="fas fa-palette"></i> CHÚ THÍCH MÀU SẮC:</strong><br>
-                <span class="legend-box" style="background:#d4edda;"></span> Quyết định công bố
-                <span class="ms-3 legend-box" style="background:#fff3cd;"></span> Quyết định sửa đổi
-                <span class="ms-3 legend-box" style="background:#cce5ff;"></span> Quyết định thay thế
-                <span class="ms-3 legend-box" style="background:#f8d7da;"></span> Quyết định bãi bỏ
-            </div>
-        `;
-        
-        html += `<h5><i class="fas fa-file-alt"></i> Các quyết định được chọn:</h5><div class="row mb-3">`;
-        data.quyet_dinhs.forEach(qd => {
-            let bgClass = '';
-            if (qd.loai === 'cong_bo') bgClass = 'table-cong-bo';
-            else if (qd.loai === 'sua_doi') bgClass = 'table-sua_doi';
-            else if (qd.loai === 'thay_the') bgClass = 'table-thay_the';
-            else bgClass = 'table-bai_bo';
-            html += `
-                <div class="col-md-3">
-                    <div class="p-2 mb-2 ${bgClass} border rounded">
-                        <strong>${escapeHtml(qd.so_quyet_dinh)}</strong><br>
-                        <small>${qd.ngay_ban_hanh}</small>
-                    </div>
-                </div>
-            `;
-        });
-        html += `</div>`;
-        
-        html += `<h5 class="mt-3"><i class="fas fa-list-alt"></i> Danh sách TTHC theo từng quyết định:</h5>`;
-        let hasTTHC = false;
-        for (const [qdId, tthcs] of Object.entries(data.tthc_theo_qd)) {
-            const qd = data.quyet_dinhs.find(q => q.id == qdId);
-            if (qd && tthcs && tthcs.length > 0) {
-                hasTTHC = true;
-                let bgClass = '';
-                if (qd.loai === 'cong_bo') bgClass = 'table-cong-bo';
-                else if (qd.loai === 'sua_doi') bgClass = 'table-sua_doi';
-                else if (qd.loai === 'thay_the') bgClass = 'table-thay_the';
-                else bgClass = 'table-bai_bo';
-                
-                html += `
-                    <div class="card mt-2">
-                        <div class="card-header ${bgClass}">
-                            <strong>${escapeHtml(qd.so_quyet_dinh)}</strong> - ${escapeHtml(qd.ten_quyet_dinh || '')}
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-sm table-bordered">
-                                <thead class="table-light">
-                                    <tr><th>Mã TTHC</th><th>Tên TTHC</th><th>Cấp thực hiện</th><th>Trạng thái</th></td>
-                                </thead>
-                                <tbody>
-                                    ${tthcs.map(t => `<tr><td><strong>${escapeHtml(t[0])}</strong></td><td>${escapeHtml(t[1])}</td><td>${escapeHtml(t[2] || '')}</td><td>${escapeHtml(t[3] || '')}</td></tr>`).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        if (!hasTTHC) {
-            html += `<div class="alert alert-warning">Không có thủ tục nào được liên kết với các quyết định này</div>`;
-        }
-        
-        $('#ketQua').html(html);
-    }).fail(function() {
-        $('#ketQua').html('<div class="alert alert-danger text-center">Lỗi khi tải dữ liệu so sánh</div>');
-    });
-});
-
-$('#btnBoChon').click(() => {
-    selectedIds = [];
-    renderList();
-    $('#ketQua').html('<div class="alert alert-secondary text-center">Chọn quyết định và bấm "So sánh" để xem kết quả</div>');
-});
-</script>
-</body>
-</html>
+</div>
+{% endif %}
+{% endblock %}
