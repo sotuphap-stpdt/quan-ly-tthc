@@ -1,50 +1,90 @@
+<!-- templates/tthc_list.html -->
 {% extends "base.html" %}
-
 {% block title %}Danh sách TTHC{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-list"></i> Danh sách Thủ tục hành chính</h2>
-    {% if session.role == 'admin' or session.quyen_them_tthc %}
-    <a href="/tthc/them" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm TTHC</a>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <h2 class="fw-bold">
+        <i class="fas fa-folder-open me-2" style="color: #1e8e3e;"></i>
+        Quản lý thủ tục hành chính
+    </h2>
+    {% if session.get('quyen_them_tthc') or session.get('role') == 'admin' %}
+    <a href="{{ url_for('tthc_create') }}" class="btn btn-gradient">
+        <i class="fas fa-plus me-2"></i>Thêm TTHC
+    </a>
     {% endif %}
 </div>
 
-<div class="data-table">
-    <table class="table">
-        <thead><tr><th>ID</th><th>Mã TTHC</th><th>Tên TTHC</th><th>Lĩnh vực</th><th>Cấp</th><th>Cơ quan</th><th>DVC</th><th>Thao tác</th></tr></thead>
-        <tbody>
-            {% for t in tthc_list %}
-            <tr>
-                <td>{{ t[0] }}</td>
-                <td><strong>{{ t[1] }}</strong></td>
-                <td><a href="/tthc/chitiet/{{ t[0] }}">{{ t[2] }}</a></td>
-                <td>{{ t[3] }}</td>
-                <td>{{ t[4] }}</td>
-                <td>{{ t[5] }}</td>
-                <td>{% if t[8] == 'X' %}<span class="badge bg-success">Toàn trình</span>{% elif t[9] == 'X' %}<span class="badge bg-warning">Một phần</span>{% else %}<span class="badge bg-secondary">TTin</span>{% endif %}</td>
-                <td>
-                    <a href="/tthc/chitiet/{{ t[0] }}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
-                    {% if session.role == 'admin' or session.quyen_sua_tthc %}
-                    <a href="/tthc/sua/{{ t[0] }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                    {% endif %}
-                    {% if session.role == 'admin' %}
-                    <a href="/tthc/xoa/{{ t[0] }}" class="btn btn-sm btn-danger" onclick="return confirmDelete()"><i class="fas fa-trash"></i></a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="8" class="text-center">Chưa có dữ liệu</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card card-modern">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-modern table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã TTHC</th>
+                        <th>Tên TTHC</th>
+                        <th>Lĩnh vực</th>
+                        <th>Cấp thực hiện</th>
+                        <th>Cơ quan</th>
+                        <th>DVC</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tthc in tthc_list %}
+                    <tr>
+                        <td class="fw-semibold">{{ tthc[1] }}</td>
+                        <td>{{ tthc[2][:50] }}{% if tthc[2]|length > 50 %}...{% endif %}</td>
+                        <td><span class="badge bg-success bg-opacity-10 text-success">{{ tthc[3] }}</span></td>
+                        <td>{{ tthc[4] or '--' }}</td>
+                        <td>{{ tthc[5][:30] or '--' }}</td>
+                        <td>
+                            {% if tthc[8] == 'X' %}<i class="fas fa-check-circle text-success" title="Toàn trình"></i>{% endif %}
+                            {% if tthc[9] == 'X' %}<i class="fas fa-check-circle text-warning" title="Một phần"></i>{% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('tthc_detail', id=tthc[0]) }}" class="btn btn-sm btn-outline-info rounded-pill me-1">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if session.get('quyen_sua_tthc') or session.get('role') == 'admin' %}
+                            <a href="{{ url_for('tthc_edit', id=tthc[0]) }}" class="btn btn-sm btn-outline-warning rounded-pill me-1">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            {% if session.get('quyen_xoa_tthc') or session.get('role') == 'admin' %}
+                            <a href="{{ url_for('tthc_delete', id=tthc[0]) }}" class="btn btn-sm btn-outline-danger rounded-pill" onclick="return confirm('Xóa TTHC này?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 {% if total_pages > 1 %}
-<div class="pagination">
-    {% for p in range(1, total_pages + 1) %}
-        {% if p == page %}<span class="active">{{ p }}</span>{% else %}<a href="?page={{ p }}">{{ p }}</a>{% endif %}
-    {% endfor %}
-</div>
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page > 1 %}
+        <li class="page-item"><a class="page-link rounded-pill me-1" href="?page={{ page-1 }}"><i class="fas fa-chevron-left"></i></a></li>
+        {% endif %}
+        {% for p in range(1, total_pages+1) %}
+            {% if p == page %}
+            <li class="page-item active"><span class="page-link rounded-pill me-1">{{ p }}</span></li>
+            {% elif p <= page+2 and p >= page-2 %}
+            <li class="page-item"><a class="page-link rounded-pill me-1" href="?page={{ p }}">{{ p }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if page < total_pages %}
+        <li class="page-item"><a class="page-link rounded-pill" href="?page={{ page+1 }}"><i class="fas fa-chevron-right"></i></a></li>
+        {% endif %}
+    </ul>
+</nav>
 {% endif %}
 {% endblock %}
