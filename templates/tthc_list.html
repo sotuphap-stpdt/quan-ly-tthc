@@ -1,90 +1,255 @@
-<!-- templates/tthc_list.html -->
 {% extends "base.html" %}
-{% block title %}Danh sách TTHC{% endblock %}
+{% block title %}Danh sách Thủ tục hành chính{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-    <h2 class="fw-bold">
-        <i class="fas fa-folder-open me-2" style="color: #1e8e3e;"></i>
-        Quản lý thủ tục hành chính
-    </h2>
-    {% if session.get('quyen_them_tthc') or session.get('role') == 'admin' %}
-    <a href="{{ url_for('tthc_create') }}" class="btn btn-gradient">
-        <i class="fas fa-plus me-2"></i>Thêm TTHC
-    </a>
-    {% endif %}
-</div>
+<div class="fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h2 class="fw-bold">
+            <i class="fas fa-list me-2" style="color: #1e8e3e;"></i>
+            DANH SÁCH THỦ TỤC HÀNH CHÍNH
+        </h2>
+        <a href="/tthc/them" class="btn btn-gradient">
+            <i class="fas fa-plus me-2"></i> Thêm mới TTHC
+        </a>
+    </div>
 
-<div class="card card-modern">
-    <div class="card-body p-0">
+    <!-- Thanh điều khiển phân trang -->
+    <div class="control-bar">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <label class="form-label mb-0 me-2"><i class="fas fa-eye"></i> Hiển thị:</label>
+                <select id="pageSizeSelect" class="form-select page-size-select" style="width: 100px;">
+                    <option value="5">5 dòng</option>
+                    <option value="10" selected>10 dòng</option>
+                    <option value="20">20 dòng</option>
+                    <option value="50">50 dòng</option>
+                    <option value="100">100 dòng</option>
+                    <option value="all">Tất cả</option>
+                </select>
+            </div>
+            <div class="col-md-6 text-center">
+                <div id="paginationControls"></div>
+            </div>
+            <div class="col-md-3 text-end">
+                <span id="paginationInfo" class="text-muted"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng danh sách -->
+    <div class="card-modern">
         <div class="table-responsive">
-            <table class="table table-modern table-hover mb-0">
+            <table class="table table-custom table-bordered mb-0">
                 <thead>
                     <tr>
-                        <th>Mã TTHC</th>
-                        <th>Tên TTHC</th>
-                        <th>Lĩnh vực</th>
-                        <th>Cấp thực hiện</th>
-                        <th>Cơ quan</th>
-                        <th>DVC</th>
-                        <th>Thao tác</th>
+                        <th style="width:50px">STT</th>
+                        <th style="width:120px">MÃ TTHC</th>
+                        <th style="min-width:350px">TÊN THỦ TỤC HÀNH CHÍNH</th>
+                        <th style="width:150px">LĨNH VỰC</th>
+                        <th style="width:60px">PHÍ</th>
+                        <th style="width:60px">LỆ PHÍ</th>
+                        <th style="width:120px">CẤP THỰC HIỆN</th>
+                        <th style="min-width:200px">CƠ QUAN THỰC HIỆN</th>
+                        <th style="width:70px">CÙNG CẤP</th>
+                        <th style="width:60px">02 CẤP</th>
+                        <th style="width:100px">PHI ĐỊA GIỚI</th>
+                        <th style="width:90px">TOÀN TRÌNH</th>
+                        <th style="width:80px">MỘT PHẦN</th>
+                        <th style="width:130px">CUNG CẤP TT</th>
+                        <th style="width:120px">DỊCH VỤ BCCI</th>
+                        <th style="width:130px">QUYẾT ĐỊNH SỐ</th>
+                        <th style="width:100px">TRẠNG THÁI</th>
+                        <th style="width:150px">GHI CHÚ</th>
+                        <th style="width:100px">THAO TÁC</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for tthc in tthc_list %}
-                    <tr>
-                        <td class="fw-semibold">{{ tthc[1] }}</td>
-                        <td>{{ tthc[2][:50] }}{% if tthc[2]|length > 50 %}...{% endif %}</td>
-                        <td><span class="badge bg-success bg-opacity-10 text-success">{{ tthc[3] }}</span></td>
-                        <td>{{ tthc[4] or '--' }}</td>
-                        <td>{{ tthc[5][:30] or '--' }}</td>
-                        <td>
-                            {% if tthc[8] == 'X' %}<i class="fas fa-check-circle text-success" title="Toàn trình"></i>{% endif %}
-                            {% if tthc[9] == 'X' %}<i class="fas fa-check-circle text-warning" title="Một phần"></i>{% endif %}
-                        </td>
-                        <td>
-                            <a href="{{ url_for('tthc_detail', id=tthc[0]) }}" class="btn btn-sm btn-outline-info rounded-pill me-1">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            {% if session.get('quyen_sua_tthc') or session.get('role') == 'admin' %}
-                            <a href="{{ url_for('tthc_edit', id=tthc[0]) }}" class="btn btn-sm btn-outline-warning rounded-pill me-1">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            {% endif %}
-                            {% if session.get('quyen_xoa_tthc') or session.get('role') == 'admin' %}
-                            <a href="{{ url_for('tthc_delete', id=tthc[0]) }}" class="btn btn-sm btn-outline-danger rounded-pill" onclick="return confirm('Xóa TTHC này?')">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">Chưa có dữ liệu</td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="tableBody">
+                    <tr><td colspan="19" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12 text-center">
+            <div id="paginationControlsBottom"></div>
+        </div>
+    </div>
 </div>
 
-{% if total_pages > 1 %}
-<nav class="mt-4">
-    <ul class="pagination justify-content-center">
-        {% if page > 1 %}
-        <li class="page-item"><a class="page-link rounded-pill me-1" href="?page={{ page-1 }}"><i class="fas fa-chevron-left"></i></a></li>
-        {% endif %}
-        {% for p in range(1, total_pages+1) %}
-            {% if p == page %}
-            <li class="page-item active"><span class="page-link rounded-pill me-1">{{ p }}</span></li>
-            {% elif p <= page+2 and p >= page-2 %}
-            <li class="page-item"><a class="page-link rounded-pill me-1" href="?page={{ p }}">{{ p }}</a></li>
-            {% endif %}
-        {% endfor %}
-        {% if page < total_pages %}
-        <li class="page-item"><a class="page-link rounded-pill" href="?page={{ page+1 }}"><i class="fas fa-chevron-right"></i></a></li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
+<script>
+// Dữ liệu từ server
+const tthcsData = {{ tthcs | tojson | safe }};
+
+let allData = [];
+let currentPage = 1;
+let pageSize = 10;
+let totalPages = 1;
+
+const capMapDisplay = {
+    'bo': 'Cấp Bộ',
+    'tinh': 'Cấp tỉnh',
+    'xa': 'Cấp xã',
+    'dung_chung': 'Dùng chung',
+    'lien_thong': 'Liên thông'
+};
+
+function renderRow(item, idx) {
+    const capText = capMapDisplay[item[6]] || item[6] || '';
+    const trangThaiText = item[17] === 'da_cong_bo' ? 'Đã công bố' : 'Bãi bỏ';
+    const rowClass = item[17] === 'bai_bo' ? 'row-bai-bo' : '';
+    const textClass = item[17] === 'bai_bo' ? 'text-strikethrough' : '';
+    
+    return `<tr class="${rowClass}">
+        <td class="text-center">${idx + 1}</td>
+        <td class="${textClass}"><strong>${escapeHtml(item[1])}</strong></td>
+        <td class="ten-tthc-content ${textClass}">${escapeHtml(item[2])}</td>
+        <td>${escapeHtml(item[3]) || '-'}</td>
+        <td class="text-center">${item[4] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td class="text-center">${item[5] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td>${capText}</td>
+        <td>${escapeHtml(item[7]) || '-'}</td>
+        <td class="text-center">${item[8] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td class="text-center">${item[9] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td class="text-center">${item[10] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td class="text-center">${item[11] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td class="text-center">${item[12] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td class="text-center">${item[13] === 'X' ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>'}</td>
+        <td>${escapeHtml(item[14]) || '-'}</td>
+        <td>${escapeHtml(item[16]) || '-'}</td>
+        <td class="text-center"><span class="badge ${item[17] === 'da_cong_bo' ? 'badge-da-cong-bo' : 'badge-bai-bo'}">${trangThaiText}</span></td>
+        <td>${escapeHtml(item[15]) || '-'}</td>
+        <td class="text-nowrap text-center">
+            <a href="/tthc/chi_tiet/${item[0]}" class="btn btn-sm btn-info rounded-3 me-1"><i class="fas fa-eye"></i></a>
+            <a href="/tthc/sua/${item[0]}" class="btn btn-sm btn-warning rounded-3 me-1"><i class="fas fa-edit"></i></a>
+            <a href="/tthc/xoa/${item[0]}" class="btn btn-sm btn-danger rounded-3" onclick="return confirm('Bạn có chắc chắn muốn xóa thủ tục này?')"><i class="fas fa-trash"></i></a>
+        </td>
+    </tr>`;
+}
+
+function renderTable() {
+    if (!allData || allData.length === 0) {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="19" class="text-center py-4">Chưa có dữ liệu thủ tục hành chính</td></tr>';
+        document.getElementById('paginationInfo').innerHTML = '';
+        document.getElementById('paginationControls').innerHTML = '';
+        document.getElementById('paginationControlsBottom').innerHTML = '';
+        return;
+    }
+    
+    const totalItems = allData.length;
+    
+    if (pageSize === 'all') {
+        let html = '';
+        for (let i = 0; i < totalItems; i++) {
+            html += renderRow(allData[i], i);
+        }
+        document.getElementById('tableBody').innerHTML = html;
+        document.getElementById('paginationInfo').innerHTML = `Hiển thị ${totalItems} trên tổng số ${totalItems} dòng`;
+        document.getElementById('paginationControls').innerHTML = '';
+        document.getElementById('paginationControlsBottom').innerHTML = '';
+        return;
+    }
+    
+    totalPages = Math.ceil(totalItems / pageSize);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    
+    const start = (currentPage - 1) * pageSize;
+    const end = Math.min(start + pageSize, totalItems);
+    const pageData = allData.slice(start, end);
+    
+    let html = '';
+    for (let i = 0; i < pageData.length; i++) {
+        const globalIdx = start + i;
+        html += renderRow(pageData[i], globalIdx);
+    }
+    document.getElementById('tableBody').innerHTML = html;
+    document.getElementById('paginationInfo').innerHTML = `Hiển thị ${start + 1} - ${end} trên tổng số ${totalItems} dòng`;
+    
+    renderPagination();
+}
+
+function renderPagination() {
+    if (totalPages <= 1) {
+        const emptyHtml = '<nav><ul class="pagination"><li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li></ul></nav>';
+        document.getElementById('paginationControls').innerHTML = emptyHtml;
+        document.getElementById('paginationControlsBottom').innerHTML = emptyHtml;
+        return;
+    }
+    
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+    
+    if (endPage - startPage < 4) {
+        if (startPage === 1) {
+            endPage = Math.min(totalPages, startPage + 4);
+        } else if (endPage === totalPages) {
+            startPage = Math.max(1, endPage - 4);
+        }
+    }
+    
+    let pageNumbers = '';
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(${i})">${i}</a>
+                        </li>`;
+    }
+    
+    const paginationHtml = `
+        <nav>
+            <ul class="pagination">
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">« Đầu</a>
+                </li>
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(${currentPage - 1})">‹ Trước</a>
+                </li>
+                ${pageNumbers}
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(${currentPage + 1})">Sau ›</a>
+                </li>
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="goToPage(${totalPages})">Cuối »</a>
+                </li>
+            </ul>
+        </nav>
+    `;
+    
+    document.getElementById('paginationControls').innerHTML = paginationHtml;
+    document.getElementById('paginationControlsBottom').innerHTML = paginationHtml;
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    renderTable();
+    document.querySelector('.table-responsive').scrollIntoView({ behavior: 'smooth' });
+}
+
+function changePageSize() {
+    var select = document.getElementById('pageSizeSelect');
+    var value = select.value;
+    
+    if (value === 'all') {
+        pageSize = 'all';
+    } else {
+        pageSize = parseInt(value);
+    }
+    currentPage = 1;
+    renderTable();
+}
+
+// Khởi tạo
+allData = tthcsData;
+
+var pageSizeSelect = document.getElementById('pageSizeSelect');
+if (pageSizeSelect) {
+    pageSizeSelect.onchange = function() { changePageSize(); };
+}
+
+if (allData && allData.length > 0) {
+    renderTable();
+} else {
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="19" class="text-center py-4">Chưa có dữ liệu thủ tục hành chính</td></tr>';
+}
+</script>
 {% endblock %}
