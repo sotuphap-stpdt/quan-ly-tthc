@@ -10,27 +10,40 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
         .main-content { flex: 1; }
+        
+        /* Card thống kê */
         .stat-card { border: none; border-radius: 15px; transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; height: 100%; }
         .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .stat-card .card-body { padding: 1.2rem; }
-        .stat-card .card-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .stat-card .card-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; font-weight: 600; }
         .stat-card .stat-number { font-size: 2rem; font-weight: bold; margin-bottom: 0; line-height: 1.2; }
-        .stat-icon { font-size: 2rem; opacity: 0.3; position: absolute; right: 15px; bottom: 15px; }
+        .stat-icon { font-size: 2rem; opacity: 0.2; position: absolute; right: 15px; bottom: 15px; }
+        
+        /* Header và card */
         .dashboard-title { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 1.5rem; border-radius: 15px; margin-bottom: 25px; text-align: center; }
-        .dashboard-title h2 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+        .dashboard-title h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
         .card-header-custom { border-radius: 15px 15px 0 0; padding: 12px 20px; font-weight: 600; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; }
-        .chart-container { position: relative; height: 280px; width: 100%; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        
+        /* Footer */
         .footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0 20px; margin-top: 30px; width: 100%; }
         .footer .footer-info { text-align: center; }
         .footer .footer-info p { margin-bottom: 8px; font-size: 0.9rem; }
         .footer .footer-info i { width: 25px; margin-right: 8px; opacity: 0.8; }
         .footer .copyright { text-align: center; padding-top: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; opacity: 0.7; }
+        
+        /* Responsive */
         @media (max-width: 768px) {
-            .stat-card .stat-number { font-size: 1.5rem; }
-            .dashboard-title h2 { font-size: 1.2rem; }
+            .stat-card .stat-number { font-size: 1.3rem; }
+            .dashboard-title h2 { font-size: 1.1rem; }
+            .navbar-brand { font-size: 0.9rem; }
         }
+        
+        /* Menu dropdown */
         .dropdown-menu { min-width: 200px; }
         .dropdown-item i { width: 20px; margin-right: 8px; }
+        .navbar-nav .nav-link { font-size: 0.9rem; padding: 0.5rem 1rem; }
+        .navbar-brand { font-weight: bold; font-size: 1rem; }
     </style>
 </head>
 <body>
@@ -42,9 +55,12 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
+                <!-- Dropdown Thêm mới -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-plus-circle"></i> Thêm mới</a>
-                    <ul class="dropdown-menu">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-plus-circle"></i> Thêm mới
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="/tthc/them"><i class="fas fa-folder-plus"></i> Thêm TTHC</a></li>
                         <li><a class="dropdown-item" href="/quyet_dinh/them"><i class="fas fa-gavel"></i> Thêm Quyết định</a></li>
                         {% if role == 'admin' %}
@@ -54,6 +70,7 @@
                         {% endif %}
                     </ul>
                 </li>
+                <!-- Các menu đơn -->
                 <li class="nav-item"><a class="nav-link" href="/tthc"><i class="fas fa-list"></i> Danh sách TTHC</a></li>
                 <li class="nav-item"><a class="nav-link" href="/quyet_dinh"><i class="fas fa-file-alt"></i> Quyết định</a></li>
                 <li class="nav-item"><a class="nav-link" href="/bao_cao"><i class="fas fa-chart-pie"></i> Báo cáo</a></li>
@@ -61,9 +78,10 @@
                 <li class="nav-item"><a class="nav-link" href="/tim_kiem"><i class="fas fa-search"></i> Tra cứu</a></li>
             </ul>
         </div>
-        <div class="ms-auto">
+        <!-- User Dropdown - CẦN KIỂM TRA BIẾN role -->
+        <div class="ms-2">
             <div class="dropdown">
-                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <i class="fas fa-user-circle"></i> {{ username }} {% if role == 'admin' %}<span class="badge bg-danger ms-1">Admin</span>{% endif %}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
@@ -87,6 +105,7 @@
             <p class="mb-0">Tổng quan số liệu thủ tục hành chính theo cấp và trạng thái công khai</p>
         </div>
 
+        <!-- 6 thẻ thống kê -->
         <div class="row g-3 mb-4">
             <div class="col-md-2 col-sm-6 col-6">
                 <div class="card stat-card bg-danger text-white">
@@ -144,6 +163,7 @@
             </div>
         </div>
 
+        <!-- Biểu đồ cột và tròn -->
         <div class="row g-4 mb-4">
             <div class="col-md-6">
                 <div class="card shadow-sm h-100">
@@ -159,6 +179,7 @@
             </div>
         </div>
 
+        <!-- Biểu đồ lĩnh vực -->
         <div class="row g-4 mb-4">
             <div class="col-md-12">
                 <div class="card shadow-sm">
@@ -168,16 +189,17 @@
             </div>
         </div>
 
+        <!-- Tóm tắt nhanh -->
         <div class="row g-4 mb-4">
             <div class="col-md-12">
                 <div class="card shadow-sm">
                     <div class="card-header-custom"><i class="fas fa-table me-2"></i> TÓM TẮT NHANH</div>
                     <div class="card-body">
                         <div class="row text-center g-3">
-                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-light"><h4 class="text-primary"><i class="fas fa-check-circle"></i> <span id="sumToanTrinh">0</span></h4><p>Thủ tục toàn trình</p></div></div>
-                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-light"><h4 class="text-warning"><i class="fas fa-adjust"></i> <span id="sumMotPhan">0</span></h4><p>Thủ tục một phần</p></div></div>
-                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-light"><h4 class="text-danger"><i class="fas fa-lock"></i> <span id="sumChuaCK">0</span></h4><p>Chưa công khai</p></div></div>
-                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-primary text-white"><h4><i class="fas fa-calculator"></i> <span id="sumTotal">0</span></h4><p>Tổng số TTHC</p></div></div>
+                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-light"><h4 class="text-primary"><i class="fas fa-check-circle"></i> <span id="sumToanTrinh">0</span></h4><p class="mb-0">Thủ tục toàn trình</p></div></div>
+                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-light"><h4 class="text-warning"><i class="fas fa-adjust"></i> <span id="sumMotPhan">0</span></h4><p class="mb-0">Thủ tục một phần</p></div></div>
+                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-light"><h4 class="text-danger"><i class="fas fa-lock"></i> <span id="sumChuaCK">0</span></h4><p class="mb-0">Chưa công khai</p></div></div>
+                            <div class="col-md-3 col-sm-6"><div class="p-3 border rounded bg-primary text-white"><h4><i class="fas fa-calculator"></i> <span id="sumTotal">0</span></h4><p class="mb-0">Tổng số TTHC</p></div></div>
                         </div>
                     </div>
                 </div>
@@ -201,26 +223,37 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Dữ liệu từ Flask
     var thongKeData = {{ thong_ke | tojson | safe }};
     
-    function getSafeNumber(value, defaultValue = 0) {
-        if (typeof value === 'number') return value;
-        if (typeof value === 'string' && !isNaN(parseFloat(value))) return parseFloat(value);
+    console.log("Dashboard Data:", thongKeData);
+    
+    // Hàm lấy giá trị an toàn
+    function getSafeValue(data, key, defaultValue) {
+        if (data && typeof data === 'object' && key in data) {
+            var val = data[key];
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string' && !isNaN(parseFloat(val))) return parseFloat(val);
+            if (val === undefined || val === null) return defaultValue;
+            return val;
+        }
         return defaultValue;
     }
     
-    var capBo = getSafeNumber(thongKeData.cap_bo);
-    var capTinh = getSafeNumber(thongKeData.cap_tinh);
-    var capXa = getSafeNumber(thongKeData.cap_xa);
-    var capDungChung = getSafeNumber(thongKeData.cap_dung_chung);
-    var capLienThong = getSafeNumber(thongKeData.cap_lien_thong);
-    var toanTrinh = getSafeNumber(thongKeData.trang_thai_toan_trinh);
-    var motPhan = getSafeNumber(thongKeData.trang_thai_cong_khai_mot_phan);
-    var chuaCK = getSafeNumber(thongKeData.trang_thai_chua_cong_khai);
-    var daCongBo = getSafeNumber(thongKeData.so_da_cong_bo);
-    var baiBo = getSafeNumber(thongKeData.so_bai_bo);
+    // Lấy dữ liệu
+    var capBo = getSafeValue(thongKeData, 'cap_bo', 0);
+    var capTinh = getSafeValue(thongKeData, 'cap_tinh', 0);
+    var capXa = getSafeValue(thongKeData, 'cap_xa', 0);
+    var capDungChung = getSafeValue(thongKeData, 'cap_dung_chung', 0);
+    var capLienThong = getSafeValue(thongKeData, 'cap_lien_thong', 0);
+    var toanTrinh = getSafeValue(thongKeData, 'trang_thai_toan_trinh', 0);
+    var motPhan = getSafeValue(thongKeData, 'trang_thai_cong_khai_mot_phan', 0);
+    var chuaCK = getSafeValue(thongKeData, 'trang_thai_chua_cong_khai', 0);
+    var daCongBo = getSafeValue(thongKeData, 'so_da_cong_bo', 0);
+    var baiBo = getSafeValue(thongKeData, 'so_bai_bo', 0);
     var linhVucList = (thongKeData.linh_vuc && Array.isArray(thongKeData.linh_vuc)) ? thongKeData.linh_vuc : [];
     
+    // Cập nhật HTML
     document.getElementById('countCapBo').innerText = capBo;
     document.getElementById('countCapTinh').innerText = capTinh;
     document.getElementById('countCapXa').innerText = capXa;
@@ -233,32 +266,60 @@
     document.getElementById('sumChuaCK').innerText = chuaCK;
     document.getElementById('sumTotal').innerText = capBo + capTinh + capXa + capDungChung + capLienThong;
     
+    // Biểu đồ cột
     var barCtx = document.getElementById('barChart');
     if (barCtx) {
         new Chart(barCtx.getContext('2d'), {
             type: 'bar',
-            data: { labels: ['Cấp Bộ', 'Cấp tỉnh', 'Cấp xã', 'Dùng chung', 'Liên thông'], datasets: [{ label: 'Số lượng thủ tục', data: [capBo, capTinh, capXa, capDungChung, capLienThong], backgroundColor: ['#dc3545', '#0d6efd', '#198754', '#ffc107', '#0dcaf0'], borderRadius: 8 }] },
+            data: {
+                labels: ['Cấp Bộ', 'Cấp tỉnh', 'Cấp xã', 'Dùng chung', 'Liên thông'],
+                datasets: [{
+                    label: 'Số lượng thủ tục',
+                    data: [capBo, capTinh, capXa, capDungChung, capLienThong],
+                    backgroundColor: ['#dc3545', '#0d6efd', '#198754', '#ffc107', '#0dcaf0'],
+                    borderRadius: 8
+                }]
+            },
             options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
     }
     
+    // Biểu đồ tròn
     var pieCtx = document.getElementById('pieChart');
     if (pieCtx) {
-        var tongTrangThai = toanTrinh + motPhan + chuaCK;
+        var tong = toanTrinh + motPhan + chuaCK;
         new Chart(pieCtx.getContext('2d'), {
             type: 'pie',
-            data: { labels: ['Toàn trình', 'Một phần', 'Chưa công khai'], datasets: [{ data: [toanTrinh, motPhan, chuaCK], backgroundColor: ['#198754', '#ffc107', '#dc3545'], hoverOffset: 10 }] },
-            options: { responsive: true, plugins: { tooltip: { callbacks: { label: function(ctx) { var v = ctx.raw; var p = tongTrangThai > 0 ? Math.round(v / tongTrangThai * 100) : 0; return ctx.label + ': ' + v + ' (' + p + '%)'; } } } } }
+            data: {
+                labels: ['Toàn trình', 'Một phần', 'Chưa công khai'],
+                datasets: [{ data: [toanTrinh, motPhan, chuaCK], backgroundColor: ['#28a745', '#ffc107', '#dc3545'], hoverOffset: 10 }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    tooltip: { callbacks: { label: function(ctx) { var v = ctx.raw; var p = tong > 0 ? Math.round(v / tong * 100) : 0; return ctx.label + ': ' + v + ' (' + p + '%)'; } } }
+                }
+            }
         });
     }
     
+    // Biểu đồ lĩnh vực
     var linhVucCtx = document.getElementById('linhVucChart');
-    if (linhVucCtx && linhVucList.length > 0 && !(linhVucList.length === 1 && linhVucList[0].ten === 'Chưa có dữ liệu')) {
-        var labels = linhVucList.map(function(item) { var ten = item.ten || 'Chưa phân loại'; return ten.length > 25 ? ten.substring(0, 22) + '...' : ten; });
-        var data = linhVucList.map(function(item) { return item.so_luong || 0; });
-        new Chart(linhVucCtx.getContext('2d'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Số lượng thủ tục', data: data, backgroundColor: 'rgba(54, 162, 235, 0.7)', borderRadius: 5 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { autoSkip: false, rotation: 15, font: { size: 11 } } } } } });
-    } else if (linhVucCtx) { 
-        linhVucCtx.parentElement.innerHTML = '<div class="alert alert-info text-center">Chưa có dữ liệu lĩnh vực để hiển thị biểu đồ</div>'; 
+    if (linhVucCtx) {
+        if (linhVucList.length > 0 && !(linhVucList.length === 1 && linhVucList[0].ten === 'Chưa có dữ liệu')) {
+            var labels = linhVucList.map(function(item) { 
+                var ten = item.ten || 'Chưa phân loại'; 
+                return ten.length > 25 ? ten.substring(0, 22) + '...' : ten; 
+            });
+            var dataValues = linhVucList.map(function(item) { return item.so_luong || 0; });
+            new Chart(linhVucCtx.getContext('2d'), { 
+                type: 'bar', 
+                data: { labels: labels, datasets: [{ label: 'Số lượng thủ tục', data: dataValues, backgroundColor: 'rgba(54, 162, 235, 0.7)', borderRadius: 5 }] }, 
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { autoSkip: false, rotation: 15, font: { size: 11 } } } } }
+            });
+        } else { 
+            linhVucCtx.parentElement.innerHTML = '<div class="alert alert-info text-center">Chưa có dữ liệu lĩnh vực để hiển thị biểu đồ</div>'; 
+        }
     }
 </script>
 </body>
