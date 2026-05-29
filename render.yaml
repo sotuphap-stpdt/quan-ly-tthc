@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: quan-ly-tthc
+    runtime: python
+    repo: https://github.com/YOUR_USERNAME/quan-ly-tthc
+    plan: free
+    region: singapore
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
