@@ -1,14 +1,20 @@
+# render.yaml - Cấu hình tự động cho Render.com
+
 services:
   - type: web
-    name: quan-ly-tthc
+    name: tthc-dongthap
     runtime: python
-    repo: https://github.com/YOUR_USERNAME/quan-ly-tthc
+    repo: https://github.com/your-username/tthc-dongthap  # Thay bằng repo của bạn
     plan: free
     region: singapore
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: RENDER_EXTERNAL_URL
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
