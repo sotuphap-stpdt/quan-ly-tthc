@@ -1112,6 +1112,79 @@ def import_excel_page():
 def uploaded_file(filename):
     return send_from_directory(app.config['QUYET_DINH_FOLDER'], filename)
 
+# Thêm vào cuối file app.py, trước if __name__ == '__main__'
+
+import threading
+import urllib.request
+import time
+
+# ==================== KEEP ALIVE (Chống ngủ đông trên Render) ====================
+
+@app.route('/ping')
+def ping():
+    """Endpoint để UptimeRobot ping giữ ứng dụng hoạt động"""
+    return jsonify({
+        'status': 'ok',
+        'timestamp': datetime.now().isoformat(),
+        'message': 'Hệ thống TTHC Sở Tư pháp Đồng Tháp đang hoạt động'
+    })
+
+@app.route('/health')
+def health():
+    """Kiểm tra sức khỏe ứng dụng"""
+    try:
+        conn = sqlite3.connect('tthc.db')
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM tthc")
+        tthc_count = c.fetchone()[0]
+        c.execute("SELECT COUNT(*) FROM quyet_dinh")
+        qd_count = c.fetchone()[0]
+        conn.close()
+        
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'tthc_count': tthc_count,
+            'quyet_dinh_count': qd_count,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+def auto_ping():
+    """Tự động ping chính nó mỗi 10 phút để giữ ứng dụng hoạt động"""
+    def ping_self():
+        while True:
+            try:
+                # Lấy URL từ biến môi trường hoặc localhost
+                url = os.environ.get('RENDER_EXTERNAL_URL', 'http://localhost:5000')
+                if url:
+                    full_url = f"{url}/ping"
+                    with urllib.request.urlopen(full_url, timeout=10) as response:
+                        print(f"[KeepAlive] Ping thành công: {response.status}")
+                else:
+                    # Nếu không có RENDER_EXTERNAL_URL, ping localhost
+                    with urllib.request.urlopen('http://localhost:5000/ping', timeout=10) as response:
+                        print(f"[KeepAlive] Ping localhost thành công: {response.status}")
+            except Exception as e:
+                print(f"[KeepAlive] Ping lỗi: {e}")
+            
+            # Chờ 10 phút (600 giây) trước khi ping tiếp
+            time.sleep(600)
+    
+    # Chạy thread tự động ping
+    thread = threading.Thread(target=ping_self, daemon=True)
+    thread.start()
+    print("[KeepAlive] Đã khởi động auto-ping thread")
+
+# Chỉ chạy auto-ping khi không phải môi trường development
+if os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_URL'):
+    auto_ping()
+
 # ==================== RUN ====================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
