@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Đăng nhập - Quản lý TTHC{% endblock %}
+{% block title %}Đăng nhập{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h4><i class="fas fa-file-alt"></i> ĐĂNG NHẬP HỆ THỐNG</h4>
-                <small>Quản lý Thủ tục hành chính - Sở Tư pháp Đồng Tháp</small>
+        <div class="card shadow border-0">
+            <div class="card-header bg-primary text-white text-center border-0">
+                <h4><i class="fas fa-file-alt"></i> HỆ THỐNG TTHC</h4>
+                <small>Sở Tư pháp tỉnh Đồng Tháp</small>
             </div>
             <div class="card-body p-4">
                 {% if error %}
@@ -23,7 +23,7 @@
                         <label class="form-label"><i class="fas fa-lock"></i> Mật khẩu</label>
                         <input type="password" name="password" class="form-control" required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-primary w-100 py-2">
                         <i class="fas fa-sign-in-alt"></i> Đăng nhập
                     </button>
                 </form>
