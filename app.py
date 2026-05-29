@@ -1,3 +1,4 @@
+# Thay thế import PDF
 import os
 import sqlite3
 import hashlib
@@ -8,9 +9,16 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 from werkzeug.utils import secure_filename
 import openpyxl
 from openpyxl import load_workbook
-import pdfplumber
 import difflib
 import re
+
+# KHÔNG dùng pdfplumber nếu gây lỗi - dùng PyPDF2 thay thế
+try:
+    import PyPDF2
+    PDF_SUPPORT = True
+except ImportError:
+    PDF_SUPPORT = False
+    print("Warning: PyPDF2 not available, PDF OCR disabled")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'sotuphap_dongthap_secret_key_2026')
@@ -58,12 +66,6 @@ def check_quyen(quyen_name):
             return redirect(url_for('dashboard'))
         return decorated
     return decorator
-
-def check_linh_vuc(linh_vuc):
-    if session.get('role') == 'admin':
-        return True
-    user_linh_vuc = session.get('linh_vuc', [])
-    return linh_vuc in user_linh_vuc
 
 # ==================== DATABASE ====================
 def init_db():
@@ -154,6 +156,22 @@ def init_db():
                   ('Admin', admin_password, 'admin', 'Quản trị viên', 'admin@dongthap.gov.vn', datetime.now().date()))
         c.execute("INSERT INTO user_quyen (user_id) VALUES (1)")
     
+    # Import sample data from Excel if tthc empty
+    c.execute("SELECT COUNT(*) FROM tthc")
+    if c.fetchone()[0] == 0:
+        sample_data = [
+            ('TTHC001', 'Đăng ký khai sinh', 'Hộ tịch', 'Miễn phí', '0', '', '', '', 'X', '', '', '', '', 'xa', 'Đã công bố', '', 'UBND cấp xã', 'da_cong_bo', '', '03 ngày', 'Luật Hộ tịch', 0, 0, datetime.now().date()),
+            ('TTHC002', 'Cấp Căn cước công dân', 'Căn cước', '50.000', '0', '', '', '', 'X', '', '', '', '', 'tinh', 'Đã công bố', '', 'Công an tỉnh', 'da_cong_bo', '', '07 ngày', 'Luật CCCD', 0, 0, datetime.now().date()),
+            ('TTHC003', 'Đăng ký kinh doanh', 'Kinh doanh', '100.000', '0', '', '', '', 'X', '', '', '', '', 'tinh', 'Đã công bố', '', 'Sở KH&ĐT', 'da_cong_bo', '', '03 ngày', 'Luật DN', 0, 0, datetime.now().date()),
+        ]
+        for item in sample_data:
+            c.execute('''INSERT INTO tthc (ma_tthc, ten_tthc, linh_vuc, phi, le_phi, lien_thong_cung_cap,
+                      lien_thong_02_cap, phi_dia_gioi, dvc_toan_trinh, dvc_mot_phan, dvc_cung_cap_tt,
+                      dich_vu_bcci, ghi_chu, cap_thuc_hien, trang_thai_cong_khai, so_quyet_dinh,
+                      co_quan_thuc_hien, trang_thai, thanh_phan_ho_so, thoi_gian_giai_quyet,
+                      can_cu_phap_ly, so_luong_da_xu_ly, so_luong_dang_xu_ly, created_at)
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', item)
+    
     conn.commit()
     conn.close()
 
@@ -243,7 +261,6 @@ def dashboard():
     conn = sqlite3.connect('tthc.db')
     c = conn.cursor()
     
-    # Filter by linh vuc if not admin
     linh_vuc_filter = ""
     params = []
     if session.get('role') != 'admin' and session.get('linh_vuc'):
@@ -437,6 +454,7 @@ def quyet_dinh_create():
         c = conn.cursor()
         try:
             file_dinh_kem = ''
+            noi_dung_ocr = ''
             if 'file_dinh_kem' in request.files:
                 file = request.files['file_dinh_kem']
                 if file and file.filename:
@@ -445,18 +463,17 @@ def quyet_dinh_create():
                     file.save(filepath)
                     file_dinh_kem = filename
                     
-                    # OCR PDF
-                    noi_dung_ocr = ''
-                    try:
-                        with pdfplumber.open(filepath) as pdf:
-                            for page in pdf.pages:
-                                text = page.extract_text()
-                                if text:
-                                    noi_dung_ocr += text + '\n'
-                    except:
-                        noi_dung_ocr = ''
-            else:
-                noi_dung_ocr = ''
+                    # Simple PDF text extraction (lightweight)
+                    if PDF_SUPPORT and filename.lower().endswith('.pdf'):
+                        try:
+                            with open(filepath, 'rb') as f:
+                                reader = PyPDF2.PdfReader(f)
+                                for page in reader.pages:
+                                    text = page.extract_text()
+                                    if text:
+                                        noi_dung_ocr += text + '\n'
+                        except:
+                            noi_dung_ocr = ''
             
             c.execute('''INSERT INTO quyet_dinh (so_quyet_dinh, ten_quyet_dinh, ngay_ban_hanh, loai, mo_ta, file_dinh_kem, noi_dung_ocr, created_at)
                       VALUES (?,?,?,?,?,?,?,?)''',
@@ -480,6 +497,7 @@ def quyet_dinh_edit(id):
     if request.method == 'POST':
         try:
             file_dinh_kem = request.form.get('existing_file', '')
+            noi_dung_ocr = ''
             if 'file_dinh_kem' in request.files:
                 file = request.files['file_dinh_kem']
                 if file and file.filename:
@@ -488,15 +506,16 @@ def quyet_dinh_edit(id):
                     file.save(filepath)
                     file_dinh_kem = filename
                     
-                    noi_dung_ocr = ''
-                    try:
-                        with pdfplumber.open(filepath) as pdf:
-                            for page in pdf.pages:
-                                text = page.extract_text()
-                                if text:
-                                    noi_dung_ocr += text + '\n'
-                    except:
-                        noi_dung_ocr = ''
+                    if PDF_SUPPORT and filename.lower().endswith('.pdf'):
+                        try:
+                            with open(filepath, 'rb') as f:
+                                reader = PyPDF2.PdfReader(f)
+                                for page in reader.pages:
+                                    text = page.extract_text()
+                                    if text:
+                                        noi_dung_ocr += text + '\n'
+                        except:
+                            noi_dung_ocr = ''
                     c.execute("UPDATE quyet_dinh SET noi_dung_ocr = ? WHERE id = ?", (noi_dung_ocr, id))
             
             c.execute('''UPDATE quyet_dinh SET so_quyet_dinh=?, ten_quyet_dinh=?, ngay_ban_hanh=?, 
@@ -538,7 +557,7 @@ def quyet_dinh_detail(id):
     conn.close()
     return render_template('quyet_dinh_detail.html', qd=qd)
 
-# ==================== SO SANH QUYET DINH (OCR + DIFF) ====================
+# ==================== SO SANH QUYET DINH ====================
 @app.route('/so_sanh_quyet_dinh')
 @login_required
 def so_sanh_page():
@@ -567,11 +586,9 @@ def api_so_sanh():
     if not qd1 or not qd2:
         return jsonify({'error': 'Không tìm thấy quyết định'}), 404
     
-    # Extract text from OCR or mo_ta
     text1 = qd1[7] if qd1[7] else qd1[5] if qd1[5] else ''
     text2 = qd2[7] if qd2[7] else qd2[5] if qd2[5] else ''
     
-    # Find differences
     diff = difflib.SequenceMatcher(None, text1, text2)
     diffs = []
     
@@ -580,19 +597,19 @@ def api_so_sanh():
             diffs.append({
                 'type': 'replace',
                 'position': {'qd1': {'start': i1, 'end': i2}, 'qd2': {'start': j1, 'end': j2}},
-                'info': f'Nội dung khác nhau: "{text1[i1:i2][:100]}..." ↔ "{text2[j1:j2][:100]}..."'
+                'info': f'Nội dung khác nhau: "{text1[i1:i2][:100]}" ↔ "{text2[j1:j2][:100]}"'
             })
         elif tag == 'insert':
             diffs.append({
                 'type': 'insert',
                 'position': {'qd2': {'start': j1, 'end': j2}},
-                'info': f'Thêm mới trong QĐ2: "{text2[j1:j2][:100]}..."'
+                'info': f'Thêm mới trong QĐ2: "{text2[j1:j2][:100]}"'
             })
         elif tag == 'delete':
             diffs.append({
                 'type': 'delete',
                 'position': {'qd1': {'start': i1, 'end': i2}},
-                'info': f'Bị xóa trong QĐ2: "{text1[i1:i2][:100]}..."'
+                'info': f'Bị xóa trong QĐ2: "{text1[i1:i2][:100]}"'
             })
     
     return jsonify({
@@ -873,10 +890,6 @@ def import_excel_page():
                 conn = sqlite3.connect('tthc.db')
                 c = conn.cursor()
                 success = 0
-                
-                headers = []
-                for cell in ws[1]:
-                    headers.append(cell.value)
                 
                 for row in ws.iter_rows(min_row=2, values_only=True):
                     if row[1] and row[2]:
