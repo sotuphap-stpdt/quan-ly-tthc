@@ -1,82 +1,151 @@
+<!-- templates/phan_quyen.html -->
 {% extends "base.html" %}
-
 {% block title %}Phân quyền người dùng{% endblock %}
-
 {% block content %}
-<h2><i class="fas fa-lock"></i> Phân quyền người dùng</h2>
-
-<div class="card shadow mt-3">
-    <div class="card-header bg-primary text-white">Chọn người dùng</div>
-    <div class="card-body">
-        <select id="userSelect" class="form-control" onchange="loadPermissions(this.value)">
-            <option value="">-- Chọn người dùng --</option>
-            {% for u in users %}
-            <option value="{{ u[0] }}">{{ u[1] }} - {{ u[3] }} ({{ u[2] }})</option>
-            {% endfor %}
-        </select>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+        <i class="fas fa-lock me-2" style="color: #f39c12;"></i>
+        Phân quyền người dùng
+    </h2>
 </div>
 
-<div id="permForm" style="display: none;" class="card shadow mt-3">
-    <div class="card-header bg-success text-white">Phân quyền chức năng</div>
+<div class="card card-modern">
     <div class="card-body">
-        <form id="permissionForm">
-            <input type="hidden" id="userId" name="user_id">
-            <div class="row">
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_them_tthc" class="form-check-input" id="quyen_them_tthc"><label class="form-check-label">Thêm TTHC</label></div></div>
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_sua_tthc" class="form-check-input" id="quyen_sua_tthc"><label class="form-check-label">Sửa TTHC</label></div></div>
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_xoa_tthc" class="form-check-input" id="quyen_xoa_tthc"><label class="form-check-label">Xóa TTHC</label></div></div>
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_them_qd" class="form-check-input" id="quyen_them_qd"><label class="form-check-label">Thêm QĐ</label></div></div>
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_sua_qd" class="form-check-input" id="quyen_sua_qd"><label class="form-check-label">Sửa QĐ</label></div></div>
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_xoa_qd" class="form-check-input" id="quyen_xoa_qd"><label class="form-check-label">Xóa QĐ</label></div></div>
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_bao_cao" class="form-check-input" id="quyen_bao_cao"><label class="form-check-label">Xem báo cáo</label></div></div>
-                <div class="col-md-4"><div class="form-check"><input type="checkbox" name="quyen_so_sanh" class="form-check-input" id="quyen_so_sanh"><label class="form-check-label">So sánh QĐ</label></div></div>
+        <div class="row">
+            <div class="col-md-4">
+                <label class="fw-bold mb-2"><i class="fas fa-user me-2"></i>Chọn người dùng</label>
+                <select id="userSelect" class="form-select rounded-4">
+                    <option value="">-- Chọn người dùng --</option>
+                    {% for user in users %}
+                    <option value="{{ user[0] }}">{{ user[3] or user[1] }} ({{ user[1] }})</option>
+                    {% endfor %}
+                </select>
             </div>
-            <hr>
-            <h5><i class="fas fa-tags"></i> Phân quyền theo lĩnh vực</h5>
-            <div class="row">
-                {% for lv in linh_vuc_list %}
-                <div class="col-md-3"><div class="form-check"><input type="checkbox" name="linh_vuc" value="{{ lv }}" class="form-check-input linh-vuc-check"><label class="form-check-label">{{ lv }}</label></div></div>
-                {% endfor %}
-            </div>
-            <div class="mt-3"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu phân quyền</button></div>
-        </form>
+        </div>
+        
+        <div id="quyenPanel" style="display: none;" class="mt-4">
+            <form id="permissionForm">
+                <input type="hidden" id="userId" name="user_id">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 rounded-4">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-folder-open me-2"></i>Quyền với TTHC</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_them_tthc" id="quyen_them_tthc">
+                                    <label class="form-check-label">Thêm TTHC</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_sua_tthc" id="quyen_sua_tthc">
+                                    <label class="form-check-label">Sửa TTHC</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_xoa_tthc" id="quyen_xoa_tthc">
+                                    <label class="form-check-label">Xóa TTHC</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 rounded-4">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-file-alt me-2"></i>Quyền với Quyết định</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_them_qd" id="quyen_them_qd">
+                                    <label class="form-check-label">Thêm quyết định</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_sua_qd" id="quyen_sua_qd">
+                                    <label class="form-check-label">Sửa quyết định</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_xoa_qd" id="quyen_xoa_qd">
+                                    <label class="form-check-label">Xóa quyết định</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 rounded-4">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-chart-bar me-2"></i>Quyền khác</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_bao_cao" id="quyen_bao_cao">
+                                    <label class="form-check-label">Xem báo cáo</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="quyen_so_sanh" id="quyen_so_sanh">
+                                    <label class="form-check-label">So sánh quyết định</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 rounded-4">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-tags me-2"></i>Lĩnh vực được phép</h6>
+                                <div id="linhVucCheckboxes">
+                                    {% for lv in linh_vuc_list %}
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="checkbox" name="linh_vuc" value="{{ lv }}" id="lv_{{ loop.index }}">
+                                        <label class="form-check-label small">{{ lv }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-gradient">
+                        <i class="fas fa-save me-2"></i>Lưu phân quyền
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
-async function loadPermissions(userId) {
-    if (!userId) return;
-    const response = await fetch(`/api/get_permissions/${userId}`);
-    const data = await response.json();
-    document.getElementById('userId').value = userId;
-    document.getElementById('quyen_them_tthc').checked = data.quyen_them_tthc;
-    document.getElementById('quyen_sua_tthc').checked = data.quyen_sua_tthc;
-    document.getElementById('quyen_xoa_tthc').checked = data.quyen_xoa_tthc;
-    document.getElementById('quyen_them_qd').checked = data.quyen_them_qd;
-    document.getElementById('quyen_sua_qd').checked = data.quyen_sua_qd;
-    document.getElementById('quyen_xoa_qd').checked = data.quyen_xoa_qd;
-    document.getElementById('quyen_bao_cao').checked = data.quyen_bao_cao;
-    document.getElementById('quyen_so_sanh').checked = data.quyen_so_sanh;
-    document.querySelectorAll('.linh-vuc-check').forEach(cb => {
-        cb.checked = data.linh_vuc && data.linh_vuc.includes(cb.value);
-    });
-    document.getElementById('permForm').style.display = 'block';
-}
+document.getElementById('userSelect').addEventListener('change', function() {
+    const userId = this.value;
+    if(userId) {
+        fetch(`/api/get_permissions/${userId}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('userId').value = userId;
+                document.getElementById('quyen_them_tthc').checked = data.quyen_them_tthc;
+                document.getElementById('quyen_sua_tthc').checked = data.quyen_sua_tthc;
+                document.getElementById('quyen_xoa_tthc').checked = data.quyen_xoa_tthc;
+                document.getElementById('quyen_them_qd').checked = data.quyen_them_qd;
+                document.getElementById('quyen_sua_qd').checked = data.quyen_sua_qd;
+                document.getElementById('quyen_xoa_qd').checked = data.quyen_xoa_qd;
+                document.getElementById('quyen_bao_cao').checked = data.quyen_bao_cao;
+                document.getElementById('quyen_so_sanh').checked = data.quyen_so_sanh;
+                
+                document.querySelectorAll('input[name="linh_vuc"]').forEach(cb => {
+                    cb.checked = data.linh_vuc.includes(cb.value);
+                });
+                
+                document.getElementById('quyenPanel').style.display = 'block';
+            });
+    } else {
+        document.getElementById('quyenPanel').style.display = 'none';
+    }
+});
 
-document.getElementById('permissionForm').addEventListener('submit', async function(e) {
+document.getElementById('permissionForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
-    const response = await fetch('/api/save_permissions', {
+    fetch('/api/save_permissions', {
         method: 'POST',
         body: formData
-    });
-    const result = await response.json();
-    if (result.success) {
+    })
+    .then(res => res.json())
+    .then(() => {
         alert('Lưu phân quyền thành công!');
-    } else {
-        alert('Lỗi: ' + result.error);
-    }
+    })
+    .catch(() => alert('Lỗi khi lưu!'));
 });
 </script>
 {% endblock %}
