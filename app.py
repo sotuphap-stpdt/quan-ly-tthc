@@ -1029,11 +1029,10 @@ def get_backup_list():
             backups.append({'name': f, 'size': stat.st_size, 'date': datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")})
     return sorted(backups, key=lambda x: x['date'], reverse=True)
 
+# Thay thế route backup cũ bằng route mới
 @app.route('/backup')
-@admin_required
-def backup_list():
-    backups = get_backup_list()
-    return render_template('backup.html', backups=backups)
+def backup_page():
+    return render_template('backup.html')
 
 @app.route('/backup/create')
 @admin_required
