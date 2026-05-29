@@ -1,131 +1,148 @@
-<!-- templates/dashboard.html -->
 {% extends "base.html" %}
-{% block title %}Bảng điều khiển - TTHC Đồng Tháp{% endblock %}
+{% block title %}Bảng điều khiển - Hệ thống TTHC{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">
-        <i class="fas fa-tachometer-alt me-2" style="color: #1e8e3e;"></i>
-        Bảng điều khiển
-    </h2>
-    <div class="text-muted">
-        <i class="fas fa-calendar-alt me-1"></i> {{ now|default('') }}
+<div class="fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">
+            <i class="fas fa-tachometer-alt me-2" style="color: #1e8e3e;"></i>
+            BẢNG ĐIỀU KHIỂN
+        </h2>
+        <div class="text-muted">
+            <i class="fas fa-calendar-alt me-1"></i> 
+            <script>document.write(new Date().toLocaleDateString('vi-VN'));</script>
+        </div>
     </div>
-</div>
 
-<!-- Stats Cards -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted mb-1">Tổng TTHC</div>
-                    <h2 class="fw-bold mb-0">{{ stats.tong_tthc }}</h2>
-                </div>
-                <div class="stat-icon bg-success bg-opacity-10 text-success">
-                    <i class="fas fa-folder-open"></i>
-                </div>
-            </div>
-            <div class="mt-2 small text-muted">
-                <i class="fas fa-arrow-up text-success"></i> Đã công bố
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted mb-1">Đã xử lý</div>
-                    <h2 class="fw-bold mb-0">{{ stats.da_xu_ly }}</h2>
-                </div>
-                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
-                    <i class="fas fa-check-circle"></i>
+    <!-- Thống kê nhanh -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Tổng số TTHC</div>
+                        <h2 class="fw-bold mb-0 text-success">{{ thong_ke.tong_tthc|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted mb-1">Đang xử lý</div>
-                    <h2 class="fw-bold mb-0">{{ stats.dang_xu_ly }}</h2>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Toàn trình</div>
+                        <h2 class="fw-bold mb-0 text-primary">{{ thong_ke.trang_thai_toan_trinh|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
                 </div>
-                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="fas fa-spinner"></i>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Một phần</div>
+                        <h2 class="fw-bold mb-0 text-warning">{{ thong_ke.trang_thai_cong_khai_mot_phan|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="fas fa-adjust"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Đã công bố</div>
+                        <h2 class="fw-bold mb-0 text-info">{{ thong_ke.so_da_cong_bo|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-info bg-opacity-10 text-info">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3 col-sm-6">
-        <div class="stat-card">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted mb-1">Quyết định</div>
-                    <h2 class="fw-bold mb-0">{{ stats.so_quyet_dinh }}</h2>
-                </div>
-                <div class="stat-icon bg-info bg-opacity-10 text-info">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Charts Row -->
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card card-modern">
-            <div class="card-header bg-transparent border-0 pt-3">
-                <h5 class="fw-bold mb-0"><i class="fas fa-chart-pie me-2"></i>TTHC theo lĩnh vực</h5>
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Bãi bỏ</div>
+                        <h2 class="fw-bold mb-0 text-danger">{{ thong_ke.so_bai_bo|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <canvas id="linhVucChart" height="250"></canvas>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Cấp Bộ</div>
+                        <h2 class="fw-bold mb-0">{{ thong_ke.cap_bo|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-secondary bg-opacity-10 text-secondary">
+                        <i class="fas fa-building"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Cấp tỉnh</div>
+                        <h2 class="fw-bold mb-0">{{ thong_ke.cap_tinh|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-info bg-opacity-10 text-info">
+                        <i class="fas fa-city"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted mb-1">Cấp xã</div>
+                        <h2 class="fw-bold mb-0">{{ thong_ke.cap_xa|default(0) }}</h2>
+                    </div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="fas fa-home"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card card-modern">
-            <div class="card-header bg-transparent border-0 pt-3">
-                <h5 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2"></i>Dịch vụ công trực tuyến</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="dvcChart" height="250"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card card-modern">
-            <div class="card-header bg-transparent border-0 pt-3">
-                <h5 class="fw-bold mb-0"><i class="fas fa-chart-simple me-2"></i>Phân bố theo cấp thực hiện</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="capChart" height="250"></canvas>
+    <!-- Biểu đồ -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card-modern">
+                <div class="card-header-custom">
+                    <h4 class="mb-0"><i class="fas fa-chart-pie me-2"></i> TTHC theo lĩnh vực</h4>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="linhVucChart" height="250"></canvas>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card card-modern">
-            <div class="card-header bg-transparent border-0 pt-3">
-                <h5 class="fw-bold mb-0"><i class="fas fa-clock me-2"></i>TTHC mới cập nhật</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush">
-                    {% for tthc in recent_tthc %}
-                    <a href="{{ url_for('tthc_detail', id=tthc[0]) }}" class="list-group-item list-group-item-action border-0 py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong class="text-success">{{ tthc[1] }}</strong>
-                                <div class="small text-muted">{{ tthc[2] }}</div>
-                            </div>
-                            <span class="badge bg-light text-dark rounded-pill">{{ tthc[3] }}</span>
-                        </div>
-                    </a>
-                    {% else %}
-                    <div class="text-center py-4 text-muted">Chưa có dữ liệu</div>
-                    {% endfor %}
+        <div class="col-md-6">
+            <div class="card-modern">
+                <div class="card-header-custom">
+                    <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Dịch vụ công trực tuyến</h4>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="dvcChart" height="250"></canvas>
                 </div>
             </div>
         </div>
@@ -134,29 +151,36 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Lĩnh vực chart
-    if(document.getElementById('linhVucChart')) {
+    // Biểu đồ lĩnh vực
+    var linhVucLabels = {{ thong_ke.linh_vuc|map(attribute='ten')|list|tojson }};
+    var linhVucValues = {{ thong_ke.linh_vuc|map(attribute='so_luong')|list|tojson }};
+    
+    if(document.getElementById('linhVucChart') && linhVucLabels.length > 0) {
         new Chart(document.getElementById('linhVucChart'), {
             type: 'doughnut',
             data: {
-                labels: {{ linh_vuc_labels|tojson }},
+                labels: linhVucLabels,
                 datasets: [{
-                    data: {{ linh_vuc_values|tojson }},
-                    backgroundColor: ['#1e8e3e', '#f39c12', '#3498db', '#e74c3c', '#9b59b6', '#1abc9c', '#e67e22', '#2c3e50'],
-                    borderWidth: 0
+                    data: linhVucValues,
+                    backgroundColor: ['#1e8e3e', '#f39c12', '#3498db', '#e74c3c', '#9b59b6', '#1abc9c', '#e67e22', '#2c3e50', '#95a5a6'],
+                    borderWidth: 0,
+                    hoverOffset: 10
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { 
+                        position: 'bottom',
+                        labels: { font: { size: 11 } }
+                    }
                 }
             }
         });
     }
     
-    // DVC Chart
+    // Biểu đồ DVC
     if(document.getElementById('dvcChart')) {
         new Chart(document.getElementById('dvcChart'), {
             type: 'bar',
@@ -164,37 +188,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: ['Toàn trình', 'Một phần', 'Cung cấp TT'],
                 datasets: [{
                     label: 'Số lượng TTHC',
-                    data: {{ dvc_data|tojson }},
+                    data: [
+                        {{ thong_ke.trang_thai_toan_trinh|default(0) }},
+                        {{ thong_ke.trang_thai_cong_khai_mot_phan|default(0) }},
+                        {{ thong_ke.trang_thai_chua_cong_khai|default(0) }}
+                    ],
                     backgroundColor: ['#1e8e3e', '#f39c12', '#3498db'],
-                    borderRadius: 8
+                    borderRadius: 10,
+                    barPercentage: 0.6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 scales: {
-                    y: { beginAtZero: true, grid: { drawBorder: false } }
+                    y: { 
+                        beginAtZero: true,
+                        grid: { drawBorder: false },
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' }
                 }
-            }
-        });
-    }
-    
-    // Cấp thực hiện Chart
-    if(document.getElementById('capChart')) {
-        new Chart(document.getElementById('capChart'), {
-            type: 'bar',
-            data: {
-                labels: {{ cap_labels|tojson }},
-                datasets: [{
-                    label: 'Số lượng TTHC',
-                    data: {{ cap_values|tojson }},
-                    backgroundColor: '#f39c12',
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true
             }
         });
     }
