@@ -1,74 +1,402 @@
 {% extends "base.html" %}
-
-{% block title %}Báo cáo thống kê{% endblock %}
-
+{% block title %}Báo cáo thống kê TTHC{% endblock %}
 {% block content %}
-<h2><i class="fas fa-chart-bar"></i> Báo cáo thống kê</h2>
+<div class="fade-in-up">
+    <h2 class="fw-bold mb-4">
+        <i class="fas fa-chart-pie me-2" style="color: #1e8e3e;"></i>
+        BÁO CÁO THỐNG KÊ THỦ TỤC HÀNH CHÍNH
+    </h2>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">Thống kê theo lĩnh vực</div>
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead><tr><th>Lĩnh vực</th><th>Số lượng</th></tr></thead>
-                    <tbody>
-                        {% for item in linh_vuc_stats %}
-                        <tr><td>{{ item[0] }}</td><td><span class="badge bg-primary">{{ item[1] }}</span></td></tr>
-                        {% else %}
-                        <tr><td colspan="2" class="text-center">Chưa có dữ liệu</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Bộ lọc -->
+    <div class="filter-card">
+        <h5 class="mb-3"><i class="fas fa-filter me-2"></i> BỘ LỌC BÁO CÁO</h5>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-gavel"></i> Số quyết định</label>
+                <select id="filterQuyetDinh" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    {% for qd in danh_sach_quyet_dinh %}
+                    <option value="{{ qd[1] }}">{{ qd[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-tags"></i> Lĩnh vực</label>
+                <select id="filterLinhVuc" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    {% for lv in danh_sach_linh_vuc %}
+                    <option value="{{ lv[0] }}">{{ lv[0] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-layer-group"></i> Cấp thực hiện</label>
+                <select id="filterCap" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    <option value="bo">Cấp Bộ</option>
+                    <option value="tinh">Cấp tỉnh</option>
+                    <option value="xa">Cấp xã</option>
+                    <option value="dung_chung">Dùng chung</option>
+                    <option value="lien_thong">Liên thông</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-globe"></i> Loại dịch vụ công</label>
+                <select id="filterTrangThai" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    <option value="toan_trinh">Toàn trình</option>
+                    <option value="mot_phan">Một phần</option>
+                    <option value="cung_cap_tt">Cung cấp thông tin</option>
+                </select>
+            </div>
+        </div>
+        <div class="row g-3 mt-2">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-flag-checkered"></i> Trạng thái</label>
+                <select id="filterTrangThaiTT" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    <option value="da_cong_bo">Đã công bố</option>
+                    <option value="bai_bo">Bãi bỏ</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-money-bill-wave"></i> Phí / Lệ phí / Miễn thu</label>
+                <select id="filterPhiLePhi" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    <option value="co_phi">Có phí</option>
+                    <option value="co_le_phi">Có lệ phí</option>
+                    <option value="mien_thu">Miễn thu</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-building"></i> Dịch vụ BCCI</label>
+                <select id="filterBCCI" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    <option value="co">Có dịch vụ BCCI</option>
+                    <option value="khong">Không có dịch vụ BCCI</option>
+                    {% for bcci in danh_sach_bcci %}
+                    {% if bcci[0] and bcci[0] != 'Có' and bcci[0] != 'Không' and bcci[0].strip() != '' %}
+                    <option value="{{ bcci[0] }}">{{ bcci[0] }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold"><i class="fas fa-university"></i> Cơ quan thực hiện</label>
+                <select id="filterCoQuan" class="form-select rounded-3">
+                    <option value="">-- Tất cả --</option>
+                    {% for cq in danh_sach_co_quan %}
+                    <option value="{{ cq[0] }}">{{ cq[0] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="row g-3 mt-3">
+            <div class="col-md-12 d-flex justify-content-center gap-2">
+                <button id="btnLoc" class="btn btn-gradient"><i class="fas fa-search me-2"></i> Lọc báo cáo</button>
+                <button id="btnReset" class="btn btn-outline-secondary rounded-3"><i class="fas fa-undo me-2"></i> Đặt lại</button>
+                <button id="btnExport" class="btn btn-gradient-orange"><i class="fas fa-file-excel me-2"></i> Xuất Excel</button>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white">Thống kê theo cấp thực hiện</div>
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead><tr><th>Cấp thực hiện</th><th>Số lượng</th></tr></thead>
-                    <tbody>
-                        {% for item in cap_stats %}
-                        <tr><td>{{ item[0] }}</td><td><span class="badge bg-success">{{ item[1] }}</span></td></tr>
-                        {% else %}
-                        <tr><td colspan="2" class="text-center">Chưa có dữ liệu</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+    <!-- Hàng thống kê -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="tongSoThuTuc" class="fw-bold text-success">0</h3><p class="mb-0 text-muted"><i class="fas fa-database me-1"></i> Tổng số TTHC</p></div></div>
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soToanTrinh" class="fw-bold text-primary">0</h3><p class="mb-0 text-muted"><i class="fas fa-check-circle me-1"></i> Toàn trình</p></div></div>
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soMotPhan" class="fw-bold text-warning">0</h3><p class="mb-0 text-muted"><i class="fas fa-adjust me-1"></i> Một phần</p></div></div>
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soCungCapTT" class="fw-bold text-info">0</h3><p class="mb-0 text-muted"><i class="fas fa-info-circle me-1"></i> Cung cấp TT</p></div></div>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soCoPhi" class="fw-bold text-danger">0</h3><p class="mb-0 text-muted"><i class="fas fa-money-bill-wave me-1"></i> Có phí</p></div></div>
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soCoLePhi" class="fw-bold text-warning">0</h3><p class="mb-0 text-muted"><i class="fas fa-receipt me-1"></i> Có lệ phí</p></div></div>
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soMienThu" class="fw-bold text-success">0</h3><p class="mb-0 text-muted"><i class="fas fa-hand-holding-heart me-1"></i> Miễn thu</p></div></div>
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soCoBCCI" class="fw-bold text-secondary">0</h3><p class="mb-0 text-muted"><i class="fas fa-building me-1"></i> Có dịch vụ BCCI</p></div></div>
+    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soDaCongBo" class="fw-bold text-success">0</h3><p class="mb-0 text-muted"><i class="fas fa-check-circle me-1"></i> Đã công bố</p></div></div>
+        <div class="col-md-3"><div class="stat-card text-center"><h3 id="soBaiBo" class="fw-bold text-danger">0</h3><p class="mb-0 text-muted"><i class="fas fa-ban me-1"></i> Bãi bỏ</p></div></div>
+    </div>
+
+    <!-- Thanh điều khiển phân trang -->
+    <div class="control-bar">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <label class="form-label mb-0 me-2"><i class="fas fa-eye"></i> Hiển thị:</label>
+                <select id="pageSizeSelect" class="form-select page-size-select" style="width: 100px;">
+                    <option value="5">5 dòng</option>
+                    <option value="10" selected>10 dòng</option>
+                    <option value="20">20 dòng</option>
+                    <option value="50">50 dòng</option>
+                    <option value="100">100 dòng</option>
+                    <option value="all">Tất cả</option>
+                </select>
             </div>
+            <div class="col-md-6 text-center">
+                <div id="paginationControls"></div>
+            </div>
+            <div class="col-md-3 text-end">
+                <span id="paginationInfo" class="text-muted"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng dữ liệu -->
+    <div class="card-modern">
+        <div class="table-responsive">
+            <table class="table table-custom table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:50px">STT</th>
+                        <th style="width:120px">MÃ TTHC</th>
+                        <th style="min-width:350px">TÊN THỦ TỤC HÀNH CHÍNH</th>
+                        <th style="width:150px">LĨNH VỰC</th>
+                        <th style="width:60px">PHÍ</th>
+                        <th style="width:60px">LỆ PHÍ</th>
+                        <th style="width:120px">CẤP THỰC HIỆN</th>
+                        <th style="min-width:200px">CƠ QUAN THỰC HIỆN</th>
+                        <th style="width:90px">TOÀN TRÌNH</th>
+                        <th style="width:80px">MỘT PHẦN</th>
+                        <th style="width:130px">CUNG CẤP TT</th>
+                        <th style="width:120px">DỊCH VỤ BCCI</th>
+                        <th style="width:130px">QUYẾT ĐỊNH SỐ</th>
+                        <th style="width:100px">TRẠNG THÁI</th>
+                        <th style="width:150px">GHI CHÚ</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="15" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-12 text-center">
+            <div id="paginationControlsBottom"></div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header bg-info text-white">Dịch vụ công trực tuyến</div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-4">
-                        <div class="stat-card">
-                            <div class="stat-number">{{ toan_trinh|default(0) }}</div>
-                            <div>DVC toàn trình</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="stat-card">
-                            <div class="stat-number">{{ mot_phan|default(0) }}</div>
-                            <div>DVC một phần</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="stat-card">
-                            <div class="stat-number">{{ (toan_trinh|default(0) + mot_phan|default(0)) }}</div>
-                            <div>Tổng số DVC</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+const capMap = {'bo':'Cấp Bộ','tinh':'Cấp tỉnh','xa':'Cấp xã','dung_chung':'Dùng chung','lien_thong':'Liên thông'};
+
+let allData = [];
+let currentPage = 1;
+let pageSize = 10;
+let totalPages = 1;
+
+function renderRow(item, idx) {
+    let trangThaiText = (item.trang_thai == 'da_cong_bo') ? 'Đã công bố' : 'Bãi bỏ';
+    let trangThaiClass = (item.trang_thai == 'da_cong_bo') ? 'badge-da-cong-bo' : 'badge-bai-bo';
+    
+    return '<tr>' +
+        '<td class="text-center">' + (idx + 1) + '</td>' +
+        '<td><strong>' + escapeHtml(item.ma_tthc) + '</strong></td>' +
+        '<td class="ten-tthc-content">' + escapeHtml(item.ten_tthc) + '</td>' +
+        '<td>' + (escapeHtml(item.linh_vuc) || '-') + '</td>' +
+        '<td class="text-center">' + ((item.phi == 'Có') ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>') + '</td>' +
+        '<td class="text-center">' + ((item.le_phi == 'Có') ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>') + '</td>' +
+        '<td>' + (capMap[item.cap_thuc_hien] || item.cap_thuc_hien || '-') + '</td>' +
+        '<td>' + (escapeHtml(item.co_quan_thuc_hien) || '-') + '</td>' +
+        '<td class="text-center">' + ((item.toan_trinh == 'X') ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>') + '</td>' +
+        '<td class="text-center">' + ((item.mot_phan == 'X') ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>') + '</td>' +
+        '<td class="text-center">' + ((item.cung_cap_tt == 'X') ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-times-circle text-muted"></i>') + '</td>' +
+        '<td>' + (escapeHtml(item.dich_vu_bcci) || '-') + '</td>' +
+        '<td>' + (escapeHtml(item.so_quyet_dinh) || '-') + '</td>' +
+        '<td class="text-center"><span class="badge ' + trangThaiClass + '">' + trangThaiText + '</span></td>' +
+        '<td>' + (escapeHtml(item.ghi_chu) || '-') + '</td>' +
+        '</tr>';
+}
+
+function renderTable() {
+    if (!allData || allData.length === 0) {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="15" class="text-center py-4">Không có dữ liệu</td></tr>';
+        document.getElementById('paginationInfo').innerHTML = '';
+        document.getElementById('paginationControls').innerHTML = '';
+        document.getElementById('paginationControlsBottom').innerHTML = '';
+        return;
+    }
+    
+    const totalItems = allData.length;
+    
+    if (pageSize === 'all') {
+        let html = '';
+        for (let i = 0; i < totalItems; i++) {
+            html += renderRow(allData[i], i);
+        }
+        document.getElementById('tableBody').innerHTML = html;
+        document.getElementById('paginationInfo').innerHTML = 'Hiển thị ' + totalItems + ' trên tổng số ' + totalItems + ' dòng';
+        document.getElementById('paginationControls').innerHTML = '';
+        document.getElementById('paginationControlsBottom').innerHTML = '';
+        return;
+    }
+    
+    totalPages = Math.ceil(totalItems / pageSize);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    
+    const start = (currentPage - 1) * pageSize;
+    const end = Math.min(start + pageSize, totalItems);
+    const pageData = allData.slice(start, end);
+    
+    let html = '';
+    for (let i = 0; i < pageData.length; i++) {
+        const globalIdx = start + i;
+        html += renderRow(pageData[i], globalIdx);
+    }
+    document.getElementById('tableBody').innerHTML = html;
+    document.getElementById('paginationInfo').innerHTML = 'Hiển thị ' + (start + 1) + ' - ' + end + ' trên tổng số ' + totalItems + ' dòng';
+    
+    renderPagination();
+}
+
+function renderPagination() {
+    if (totalPages <= 1) {
+        var emptyHtml = '<nav><ul class="pagination"><li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li></ul></nav>';
+        document.getElementById('paginationControls').innerHTML = emptyHtml;
+        document.getElementById('paginationControlsBottom').innerHTML = emptyHtml;
+        return;
+    }
+    
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+    
+    if (endPage - startPage < 4) {
+        if (startPage === 1) {
+            endPage = Math.min(totalPages, startPage + 4);
+        } else if (endPage === totalPages) {
+            startPage = Math.max(1, endPage - 4);
+        }
+    }
+    
+    let pageNumbers = '';
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers += '<li class="page-item ' + (i === currentPage ? 'active' : '') + '">' +
+                            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + i + ')">' + i + '</a>' +
+                        '</li>';
+    }
+    
+    var paginationHtml = '<nav><ul class="pagination">' +
+        '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">« Đầu</a>' +
+        '</li>' +
+        '<li class="page-item ' + (currentPage === 1 ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + (currentPage - 1) + ')">‹ Trước</a>' +
+        '</li>' +
+        pageNumbers +
+        '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + (currentPage + 1) + ')">Sau ›</a>' +
+        '</li>' +
+        '<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '">' +
+            '<a class="page-link" href="javascript:void(0)" onclick="goToPage(' + totalPages + ')">Cuối »</a>' +
+        '</li>' +
+        '</ul></nav>';
+    
+    document.getElementById('paginationControls').innerHTML = paginationHtml;
+    document.getElementById('paginationControlsBottom').innerHTML = paginationHtml;
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    renderTable();
+    document.querySelector('.table-responsive').scrollIntoView({ behavior: 'smooth' });
+}
+
+function changePageSize() {
+    var select = document.getElementById('pageSizeSelect');
+    var value = select.value;
+    
+    if (value === 'all') {
+        pageSize = 'all';
+    } else {
+        pageSize = parseInt(value);
+    }
+    currentPage = 1;
+    renderTable();
+}
+
+function loadData() {
+    var so_quyet_dinh = document.getElementById('filterQuyetDinh').value;
+    var linh_vuc = document.getElementById('filterLinhVuc').value;
+    var cap_thuc_hien = document.getElementById('filterCap').value;
+    var trang_thai = document.getElementById('filterTrangThai').value;
+    var phi_le_phi = document.getElementById('filterPhiLePhi').value;
+    var dich_vu_bcci = document.getElementById('filterBCCI').value;
+    var co_quan_thuc_hien = document.getElementById('filterCoQuan').value;
+    var trang_thai_tt = document.getElementById('filterTrangThaiTT').value;
+    
+    var url = '/api/bao_cao_data?so_quyet_dinh=' + encodeURIComponent(so_quyet_dinh) +
+                '&linh_vuc=' + encodeURIComponent(linh_vuc) +
+                '&cap_thuc_hien=' + encodeURIComponent(cap_thuc_hien) +
+                '&trang_thai=' + encodeURIComponent(trang_thai) +
+                '&phi_le_phi=' + encodeURIComponent(phi_le_phi) +
+                '&dich_vu_bcci=' + encodeURIComponent(dich_vu_bcci) +
+                '&co_quan_thuc_hien=' + encodeURIComponent(co_quan_thuc_hien) +
+                '&trang_thai_tt=' + encodeURIComponent(trang_thai_tt);
+    
+    document.getElementById('tableBody').innerHTML = '<tr><td colspan="15" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải...</td></tr>';
+    
+    fetch(url)
+        .then(function(response) {
+            if (!response.ok) throw new Error('HTTP error ' + response.status);
+            return response.json();
+        })
+        .then(function(data) {
+            document.getElementById('tongSoThuTuc').innerText = data.tong_so || 0;
+            document.getElementById('soToanTrinh').innerText = data.so_toan_trinh || 0;
+            document.getElementById('soMotPhan').innerText = data.so_mot_phan || 0;
+            document.getElementById('soCungCapTT').innerText = data.so_cung_cap_tt || 0;
+            document.getElementById('soDaCongBo').innerText = data.so_da_cong_bo || 0;
+            document.getElementById('soBaiBo').innerText = data.so_bai_bo || 0;
+            document.getElementById('soCoPhi').innerText = data.so_co_phi || 0;
+            document.getElementById('soCoLePhi').innerText = data.so_co_le_phi || 0;
+            document.getElementById('soMienThu').innerText = data.so_mien_thu || 0;
+            document.getElementById('soCoBCCI').innerText = data.so_co_bcci || 0;
+            
+            allData = data.data || [];
+            currentPage = 1;
+            renderTable();
+        })
+        .catch(function(e) {
+            console.error('Lỗi:', e);
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="15" class="text-danger text-center py-4">Lỗi tải dữ liệu: ' + e.message + '</td></tr>';
+        });
+}
+
+// Sự kiện
+document.getElementById('btnLoc').addEventListener('click', loadData);
+document.getElementById('btnReset').addEventListener('click', function() {
+    document.getElementById('filterQuyetDinh').value = '';
+    document.getElementById('filterLinhVuc').value = '';
+    document.getElementById('filterCap').value = '';
+    document.getElementById('filterTrangThai').value = '';
+    document.getElementById('filterPhiLePhi').value = '';
+    document.getElementById('filterBCCI').value = '';
+    document.getElementById('filterCoQuan').value = '';
+    document.getElementById('filterTrangThaiTT').value = '';
+    loadData();
+});
+document.getElementById('btnExport').addEventListener('click', function() {
+    var params = '?so_quyet_dinh=' + encodeURIComponent(document.getElementById('filterQuyetDinh').value) +
+                '&linh_vuc=' + encodeURIComponent(document.getElementById('filterLinhVuc').value) +
+                '&cap_thuc_hien=' + encodeURIComponent(document.getElementById('filterCap').value) +
+                '&trang_thai=' + encodeURIComponent(document.getElementById('filterTrangThai').value) +
+                '&phi_le_phi=' + encodeURIComponent(document.getElementById('filterPhiLePhi').value) +
+                '&dich_vu_bcci=' + encodeURIComponent(document.getElementById('filterBCCI').value) +
+                '&co_quan_thuc_hien=' + encodeURIComponent(document.getElementById('filterCoQuan').value) +
+                '&trang_thai_tt=' + encodeURIComponent(document.getElementById('filterTrangThaiTT').value);
+    window.location.href = '/export_bao_cao_excel' + params;
+});
+
+// Sự kiện thay đổi số dòng
+var pageSizeSelect = document.getElementById('pageSizeSelect');
+if (pageSizeSelect) {
+    pageSizeSelect.onchange = function() { changePageSize(); };
+}
+
+// Tải dữ liệu ban đầu
+loadData();
+</script>
 {% endblock %}
